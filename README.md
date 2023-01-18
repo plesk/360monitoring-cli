@@ -2,6 +2,10 @@
 
 This repository contains a CLI script for 360 Monitoring that allows you to connect to your 360 Monitoring (https://360monitoring.com) account and list monitoring data, add, update or remove server or website monitors.
 
+## Documentation
+
+You can find the full documentation including the feature complete REST API at [docs.360monitoring.com](https://docs.360monitoring.com/docs) and [docs.360monitoring.com/docs/api](https://docs.360monitoring.com/docs/api).
+
 ## Preconditions
 
  * Make sure to have an account at https://360monitoring.com or https://platform360.io
