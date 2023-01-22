@@ -7,9 +7,11 @@ from lib.contacts import Contacts
 from lib.servers import Servers
 from lib.sites import Sites
 from lib.usertokens import UserTokens
+import json
 
 monitoringconfig = MonitoringConfig()
 cli = argparse.ArgumentParser(description='CLI for 360 Monitoring')
+cli_subcommands = dict()
 
 def config(args):
     if args.api_key:
@@ -38,23 +40,23 @@ def servers(args):
         usertokens = UserTokens(monitoringconfig)
         token = usertokens.token()
         if not token:
-            print ("First create a user token by executing:")
-            print ()
-            print ("./360monitoring.py usertokens --create")
-            print ("./360monitoring.py usertokens --list")
-            print ()
+            print("First create a user token by executing:")
+            print()
+            print("./360monitoring.py usertokens --create")
+            print("./360monitoring.py usertokens --list")
+            print()
             token = "[YOUR_USER_TOKEN]"
 
-        print ("Please login via SSH to each of the servers you would like to add and execute the following command:")
-        print ()
-        print ("wget -q -N monitoring.platform360.io/agent360.sh && bash agent360.sh", token)
+        print("Please login via SSH to each of the servers you would like to add and execute the following command:")
+        print()
+        print("wget -q -N monitoring.platform360.io/agent360.sh && bash agent360.sh", token)
 
     elif args.remove:
-        print ("Please login via SSH to each of the servers you would like to remove.")
-        print ("First stop the monitoring agent by running \"service agent360 stop\" then run \"pip3 uninstall agent360\". After 15 minutes you are able to remove the server.")
+        print("Please login via SSH to each of the servers you would like to remove.")
+        print("First stop the monitoring agent by running \"service agent360 stop\" then run \"pip3 uninstall agent360\". After 15 minutes you are able to remove the server.")
 
     else:
-        cli.print_help()
+        cli_subcommands[args.subparser].print_help()
 
 def sites(args):
     sites = Sites(monitoringconfig)
@@ -89,7 +91,7 @@ def sites(args):
             print("ERROR: File to import ", args.add_from_file, "not found")
 
     else:
-        cli.print_help()
+        cli_subcommands[args.subparser].print_help()
 
 def contacts(args):
     contacts = Contacts(monitoringconfig)
@@ -124,7 +126,7 @@ def contacts(args):
             print("ERROR: File to import ", args.add_from_file, "not found")
 
     else:
-        cli.print_help()
+        cli_subcommands[args.subparser].print_help()
 
 def usertokens(args):
     usertokens = UserTokens(monitoringconfig)
@@ -145,7 +147,7 @@ def usertokens(args):
         usertokens.create()
 
     else:
-        cli.print_help()
+        cli_subcommands[args.subparser].print_help()
 
 def perform_cli():
     subparsers = cli.add_subparsers(title='commands', dest='subparser')
@@ -203,6 +205,12 @@ def perform_cli():
     cli_usertokens.add_argument('--json', action='store_const', const='json', dest='format')
     cli_usertokens.add_argument('--csv', action='store_const', const='csv', dest='format')
     cli_usertokens.add_argument('--table', action='store_const', const='table', dest='format')
+
+    cli_subcommands['config'] = cli_config
+    cli_subcommands['contacts'] = cli_contacts
+    cli_subcommands['servers'] = cli_servers
+    cli_subcommands['sites'] = cli_sites
+    cli_subcommands['usertokens'] = cli_usertokens
 
     args = cli.parse_args()
     if args.subparser == None:

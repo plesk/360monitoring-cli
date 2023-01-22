@@ -4,6 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 from lib.monitoringconfig import MonitoringConfig
+from lib.functions import *
 
 class Servers(object):
 
@@ -17,8 +18,13 @@ class Servers(object):
     def fetch_data(self):
         """Retrieve a list of all monitored servers"""
 
+        # if data is already downloaded, use cached data
         if self.servers != None:
             return True
+
+        # check if headers are correctly set for authorization
+        if not self.config.headers():
+            return False
 
         # Make request to API endpoint
         response = requests.get(self.config.endpoint + "servers", params="perpage=" + str(self.config.max_items), headers=self.config.headers())
@@ -29,28 +35,26 @@ class Servers(object):
             self.servers = response.json()["servers"]
             return True
         else:
-            print("An error occurred:", response.status_code)
+            print_error("An error occurred:", response.status_code)
             self.servers = None
             return False
 
     def list(self):
         """Iterate through list of server monitors and print details"""
 
-        self.fetch_data()
-        self.print_header()
+        if self.fetch_data():
+            self.print_header()
 
-        # Iterate through list of monitors and print urls, etc.
-        for server in self.servers:
-            self.print(server)
+            # Iterate through list of monitors and print urls, etc.
+            for server in self.servers:
+                self.print(server)
 
-        self.print_footer()
+            self.print_footer()
 
     def get(self, pattern: str):
         """Print the data of all server monitors that match the specified server name"""
 
-        if pattern:
-            self.fetch_data()
-
+        if pattern and self.fetch_data():
             for server in self.servers:
                 if pattern == server["id"] or pattern in server["name"]:
                     self.print(server)

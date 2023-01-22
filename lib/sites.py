@@ -4,6 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 from lib.monitoringconfig import MonitoringConfig
+from lib.functions import *
 
 class Sites(object):
 
@@ -17,8 +18,13 @@ class Sites(object):
     def fetch_data(self):
         """Retrieve the list of all website monitors"""
 
+        # if data is already downloaded, use cached data
         if self.monitors != None:
             return True
+
+        # check if headers are correctly set for authorization
+        if not self.config.headers():
+            return False
 
         # Make request to API endpoint
         response = requests.get(self.config.endpoint + "monitors", params="perpage=" + str(self.config.max_items), headers=self.config.headers())
@@ -29,27 +35,25 @@ class Sites(object):
             self.monitors = response.json()["monitors"]
             return True
         else:
-            print("An error occurred:", response.status_code)
+            print_error("An error occurred:", response.status_code)
             self.monitors = None
             return False
 
     def list(self):
         """Iterate through list of web monitors and print details"""
 
-        self.fetch_data()
-        self.print_header()
+        if self.fetch_data():
+            self.print_header()
 
-        for monitor in self.monitors:
-            self.print(monitor)
+            for monitor in self.monitors:
+                self.print(monitor)
 
-        self.print_footer()
+            self.print_footer()
 
     def get(self, pattern: str):
         """Print the data of all web monitors that match the specified url pattern"""
 
-        if pattern:
-            self.fetch_data()
-
+        if pattern and self.fetch_data():
             for monitor in self.monitors:
                 if pattern == monitor["id"] or pattern in monitor["url"]:
                     self.print(monitor)
@@ -57,12 +61,11 @@ class Sites(object):
     def add(self, url: str):
         """Add a monitor for the given URL"""
 
-        if url:
-            self.fetch_data()
+        if url and self.fetch_data():
 
             for monitor in self.monitors:
                 if monitor["url"] == url:
-                    print (url, "already exists and will not be added")
+                    print(url, "already exists and will not be added")
                     return
 
             name = url.replace('https://', "").replace('http://', "")
@@ -80,22 +83,21 @@ class Sites(object):
 
             # Check status code of response
             if response.status_code == 200:
-                print ("Added site monitor:", url)
+                print("Added site monitor:", url)
             else:
-                print("Failed to add site monitor", url, "with response code: ", response.status_code)
+                print_error("Failed to add site monitor", url, "with response code: ", response.status_code)
 
     def remove(self, pattern: str):
         """Remove the monitor for the given URL"""
 
-        if pattern:
-            self.fetch_data()
+        if pattern and self.fetch_data():
 
             removed = 0
             for monitor in self.monitors:
                 id = monitor["id"]
                 url = monitor["url"]
                 if pattern == id or pattern == url:
-                    print ("Try to remove site monitor:", url, "[", id, "]")
+                    print("Try to remove site monitor:", url, "[", id, "]")
                     removed += 1
 
                     # Make request to API endpoint
@@ -103,14 +105,14 @@ class Sites(object):
 
                     # Check status code of response
                     if response.status_code == 204:
-                        print ("Removed site monitor:", url, "[", id, "]")
+                        print("Removed site monitor:", url, "[", id, "]")
                     else:
-                        print ("Failed to remove site monitor", url, "[", id, "] with response code: ", response.status_code)
+                        print_error("Failed to remove site monitor", url, "[", id, "] with response code: ", response.status_code)
 
                     return
 
             if removed == 0:
-                print ("Monitor with id or url", pattern, "not found")
+                print_warn("Monitor with id or url", pattern, "not found")
 
     def print_header(self):
         """Print CSV header if CSV format requested"""

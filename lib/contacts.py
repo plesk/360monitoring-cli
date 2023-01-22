@@ -4,6 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 from lib.monitoringconfig import MonitoringConfig
+from lib.functions import *
 
 class Contacts(object):
 
@@ -17,8 +18,13 @@ class Contacts(object):
     def fetch_data(self):
         """Retrieve the list of all contacts"""
 
+        # if data is already downloaded, use cached data
         if self.contacts != None:
             return True
+
+        # check if headers are correctly set for authorization
+        if not self.config.headers():
+            return False
 
         # Make request to API endpoint
         response = requests.get(self.config.endpoint + "contacts", params="perpage=" + str(self.config.max_items), headers=self.config.headers())
@@ -29,27 +35,25 @@ class Contacts(object):
             self.contacts = response.json()["contacts"]
             return True
         else:
-            print("An error occurred:", response.status_code)
+            print_error("An error occurred:", response.status_code)
             self.contacts = None
             return False
 
     def list(self):
         """Iterate through list of contacts and print details"""
 
-        self.fetch_data()
-        self.print_header()
+        if self.fetch_data():
+            self.print_header()
 
-        for contact in self.contacts:
-            self.print(contact)
+            for contact in self.contacts:
+                self.print(contact)
 
-        self.print_footer()
+            self.print_footer()
 
     def get(self, pattern: str):
         """Print the data of all contacts that match the specified name pattern"""
 
-        if pattern:
-            self.fetch_data()
-
+        if pattern and self.fetch_data():
             for contact in self.contacts:
                 if pattern == contact["id"] or pattern in contact["name"] or pattern == contact["email"]:
                     self.print(contact)
@@ -57,12 +61,11 @@ class Contacts(object):
     def add(self, name: str, email: str):
         """Add a contact for the given name"""
 
-        if name:
-            self.fetch_data()
+        if name and self.fetch_data():
 
             for contact in self.contacts:
                 if contact["name"] == name:
-                    print (name, "already exists and will not be added")
+                    print(name, "already exists and will not be added")
                     return
 
             # Make request to API endpoint
@@ -74,22 +77,21 @@ class Contacts(object):
 
             # Check status code of response
             if response.status_code == 200:
-                print ("Added contact:", name)
+                print("Added contact:", name)
             else:
-                print("Failed to add contact", name, "with response code: ", response.status_code)
+                print_error("Failed to add contact", name, "with response code: ", response.status_code)
 
     def remove(self, pattern: str):
         """Remove the contact for the given name"""
 
-        if pattern:
-            self.fetch_data()
+        if pattern and self.fetch_data():
 
             removed = 0
             for contact in self.contacts:
                 id = contact["id"]
                 name = contact["name"]
                 if pattern == id or pattern == name:
-                    print ("Try to remove contact:", name, "[", id, "]")
+                    print("Try to remove contact:", name, "[", id, "]")
                     removed += 1
 
                     # Make request to API endpoint
@@ -97,14 +99,14 @@ class Contacts(object):
 
                     # Check status code of response
                     if response.status_code == 204:
-                        print ("Removed contact:", name, "[", id, "]")
+                        print("Removed contact:", name, "[", id, "]")
                     else:
-                        print ("Failed to remove contact", name, "[", id, "] with response code: ", response.status_code)
+                        print_error("Failed to remove contact", name, "[", id, "] with response code: ", response.status_code)
 
                     return
 
             if removed == 0:
-                print ("Contact with id or name", pattern, "not found")
+                print_warn("Contact with id or name", pattern, "not found")
 
     def print_header(self):
         """Print CSV header if CSV format requested"""
