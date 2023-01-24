@@ -10,10 +10,11 @@ class Contacts(object):
 
     def __init__(self, config):
         self.config = config
+        self.contacts = None
         self.format = 'table'
         self.table = PrettyTable()
         self.table.field_names = ["Name", "Email", "Method"]
-        self.contacts = None
+        self.table.align['Name'] = 'l'
 
     def fetch_data(self):
         """Retrieve the list of all contacts"""

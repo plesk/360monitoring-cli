@@ -10,10 +10,11 @@ class Servers(object):
 
     def __init__(self, config):
         self.config = config
+        self.servers = None
         self.format = 'table'
         self.table = PrettyTable()
         self.table.field_names = ["Server name", "OS", "Disk Info"]
-        self.servers = None
+        self.table.align['Server name'] = 'l'
 
     def fetch_data(self):
         """Retrieve a list of all monitored servers"""
@@ -82,8 +83,13 @@ class Servers(object):
             total_disk_space = free_disk_space + used_disk_space
             free_disk_space_percent = free_disk_space / total_disk_space * 100
             mount = disk["mount"]
+
+            # add separator
             if disk_info:
-                disk_info += ", {:.0f}".format(free_disk_space_percent) + "% free on " + mount
+                disk_info += ", "
+
+            if free_disk_space_percent <= float(self.config.threshold_free_diskspace):
+                disk_info += f"{bcolors.FAIL}" + "{:.0f}".format(free_disk_space_percent) + "% free on " + mount + f"{bcolors.ENDC}"
             else:
                 disk_info += "{:.0f}".format(free_disk_space_percent) + "% free on " + mount
 

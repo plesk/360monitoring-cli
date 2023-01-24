@@ -9,6 +9,8 @@ from lib.sites import Sites
 from lib.usertokens import UserTokens
 import json
 
+__version__ = '1.0.1'
+
 monitoringconfig = MonitoringConfig()
 cli = argparse.ArgumentParser(description='CLI for 360 Monitoring')
 cli_subcommands = dict()
@@ -16,6 +18,9 @@ cli_subcommands = dict()
 def config(args):
     if args.api_key:
         monitoringconfig.api_key = args.api_key
+        monitoringconfig.save_to_file()
+
+    elif args.save:
         monitoringconfig.save_to_file()
 
     else:
@@ -156,6 +161,7 @@ def perform_cli():
     cli_config.set_defaults(func=config)
     cli_config.add_argument('-a', '--api-key', help='specify your API KEY for 360 Monitoring')
     cli_config.add_argument('-p', '--print', action='store_true', help='print your current settings for 360 Monitoring')
+    cli_config.add_argument('-s', '--save', action='store_true', help='save your current settings for 360 Monitoring to the default ini file')
 
     cli_servers = subparsers.add_parser('servers', help='list and manage all monitored servers')
     cli_servers.set_defaults(func=servers)

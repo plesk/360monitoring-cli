@@ -10,10 +10,10 @@ class UserTokens(object):
 
     def __init__(self, config):
         self.config = config
+        self.usertokens = None
         self.format = 'table'
         self.table = PrettyTable()
         self.table.field_names = ["Token"]
-        self.usertokens = None
 
     def fetch_data(self):
         """Retrieve the list of all usertokens"""
