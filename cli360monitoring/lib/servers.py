@@ -16,7 +16,7 @@ class Servers(object):
         self.table.field_names = ['Server name', 'OS', 'Disk Info']
         self.table.align['Server name'] = 'l'
 
-    def fetch_data(self):
+    def fetchData(self):
         """Retrieve a list of all monitored servers"""
 
         # if data is already downloaded, use cached data
@@ -36,36 +36,36 @@ class Servers(object):
             self.servers = response.json()['servers']
             return True
         else:
-            print_error("An error occurred:", response.status_code)
+            printError("An error occurred:", response.status_code)
             self.servers = None
             return False
 
     def list(self):
         """Iterate through list of server monitors and print details"""
 
-        if self.fetch_data():
-            self.print_header()
+        if self.fetchData():
+            self.printHeader()
 
             # Iterate through list of monitors and print urls, etc.
             for server in self.servers:
                 self.print(server)
 
-            self.print_footer()
+            self.printFooter()
 
     def get(self, pattern: str):
         """Print the data of all server monitors that match the specified server name"""
 
-        if pattern and self.fetch_data():
+        if pattern and self.fetchData():
             for server in self.servers:
                 if pattern == server['id'] or pattern in server['name']:
                     self.print(server)
 
-    def print_header(self):
+    def printHeader(self):
         """Print CSV if CSV format requested"""
         if (self.format == 'csv'):
             print('name;os;free disk space')
 
-    def print_footer(self):
+    def printFooter(self):
         """Print table if table format requested"""
         if (self.format == 'table'):
             print(self.table)

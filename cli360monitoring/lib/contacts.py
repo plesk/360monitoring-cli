@@ -19,7 +19,7 @@ class Contacts(object):
         self.table.align['SMS'] = 'l'
         self.table.align['Method'] = 'c'
 
-    def fetch_data(self):
+    def fetchData(self):
         """Retrieve the list of all contacts"""
 
         # if data is already downloaded, use cached data
@@ -39,25 +39,25 @@ class Contacts(object):
             self.contacts = response.json()['contacts']
             return True
         else:
-            print_error("An error occurred:", response.status_code)
+            printError("An error occurred:", response.status_code)
             self.contacts = None
             return False
 
     def list(self):
         """Iterate through list of contacts and print details"""
 
-        if self.fetch_data():
-            self.print_header()
+        if self.fetchData():
+            self.printHeader()
 
             for contact in self.contacts:
                 self.print(contact)
 
-            self.print_footer()
+            self.printFooter()
 
     def get(self, pattern: str):
         """Print the data of all contacts that match the specified name pattern"""
 
-        if pattern and self.fetch_data():
+        if pattern and self.fetchData():
             for contact in self.contacts:
                 if pattern == contact['id'] or pattern in contact['name'] or pattern == contact['email']:
                     self.print(contact)
@@ -65,7 +65,7 @@ class Contacts(object):
     def add(self, name: str, email: str, sms: str = ''):
         """Add a contact for the given name"""
 
-        if name and self.fetch_data():
+        if name and self.fetchData():
 
             for contact in self.contacts:
                 if contact['name'] == name:
@@ -86,12 +86,12 @@ class Contacts(object):
             if response.status_code == 200:
                 print("Added contact:", name)
             else:
-                print_error("Failed to add contact", name, "with response code: ", response.status_code)
+                printError("Failed to add contact", name, "with response code: ", response.status_code)
 
     def remove(self, pattern: str):
         """Remove the contact for the given name"""
 
-        if pattern and self.fetch_data():
+        if pattern and self.fetchData():
 
             removed = 0
             for contact in self.contacts:
@@ -111,19 +111,19 @@ class Contacts(object):
                     if response.status_code == 204:
                         print("Removed contact:", name, "[", id, "]")
                     else:
-                        print_error("Failed to remove contact", name, "[", id, "] with response code: ", response.status_code)
+                        printError("Failed to remove contact", name, "[", id, "] with response code: ", response.status_code)
 
                     return
 
             if removed == 0:
-                print_warn("Contact with id or name", pattern, "not found")
+                printWarn("Contact with id or name", pattern, "not found")
 
-    def print_header(self):
+    def printHeader(self):
         """Print CSV header if CSV format requested"""
         if (self.format == 'csv'):
             print('name;email;sms;method')
 
-    def print_footer(self):
+    def printFooter(self):
         """Print table if table format requested"""
         if (self.format == 'table'):
             print(self.table)

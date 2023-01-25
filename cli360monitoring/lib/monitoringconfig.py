@@ -3,7 +3,7 @@
 
 import os
 import configparser
-from lib.functions import print_error
+from lib.functions import printError
 from lib.bcolors import bcolors
 
 class MonitoringConfig(object):
@@ -17,7 +17,7 @@ class MonitoringConfig(object):
         self.threshold_ttfb = 1.0
         self.threshold_free_diskspace = 20.0
 
-        self.load_from_file()
+        self.loadFromFile()
 
     def headers(self):
         """Set headers for http requests"""
@@ -27,10 +27,10 @@ class MonitoringConfig(object):
                 "Authorization": "Bearer " + self.api_key
             }
         else:
-            print_error("ERROR: No API key specified in " + self.filename + ". Please run \"./360monitoring.py config --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.")
+            printError("ERROR: No API key specified in " + self.filename + ". Please run \"./360monitoring.py config --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.")
             return {}
 
-    def load_from_file(self):
+    def loadFromFile(self):
         """Read API endpoint and API key from config file"""
 
         if os.path.isfile(self.filename):
@@ -57,7 +57,7 @@ class MonitoringConfig(object):
                 if 'min-free-diskspace-percent' in parser['Thresholds']:
                     self.threshold_free_diskspace = parser['Thresholds']['min-free-diskspace-percent']
 
-    def save_to_file(self):
+    def saveToFile(self):
         """Save settings to config file"""
 
         parser = configparser.ConfigParser()

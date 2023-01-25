@@ -15,7 +15,7 @@ class UserTokens(object):
         self.table = PrettyTable()
         self.table.field_names = ['Token']
 
-    def fetch_data(self):
+    def fetchData(self):
         """Retrieve the list of all usertokens"""
 
         # if data is already downloaded, use cached data
@@ -40,26 +40,26 @@ class UserTokens(object):
                 self.usertokens = None
                 return False
         else:
-            print_error("An error occurred:", response.status_code)
+            printError("An error occurred:", response.status_code)
             self.usertokens = None
             return False
 
     def list(self):
         """Iterate through list of usertokens and print details"""
 
-        if self.fetch_data():
-            self.print_header()
+        if self.fetchData():
+            self.printHeader()
 
             if self.usertokens != None:
                 for usertoken in self.usertokens:
                     self.print(usertoken)
 
-            self.print_footer()
+            self.printFooter()
 
     def get(self, pattern: str):
         """Print the data of all usertokens that match the specified pattern"""
 
-        if pattern and self.fetch_data():
+        if pattern and self.fetchData():
             for usertoken in self.usertokens:
                 if pattern == usertoken['token']:
                     self.print(usertoken)
@@ -67,7 +67,7 @@ class UserTokens(object):
     def token(self):
         """Print the data of first usertoken"""
 
-        if self.fetch_data() and len(self.usertokens) > 0:
+        if self.fetchData() and len(self.usertokens) > 0:
             return self.usertokens[0]['token']
 
     def create(self):
@@ -84,15 +84,15 @@ class UserTokens(object):
             print("Created usertoken")
             return True
         else:
-            print_error("Failed to create usertoken with response code: ", response.status_code)
+            printError("Failed to create usertoken with response code: ", response.status_code)
             return False
 
-    def print_header(self):
+    def printHeader(self):
         """Print CSV header if CSV format requested"""
         if (self.format == 'csv'):
             print('token')
 
-    def print_footer(self):
+    def printFooter(self):
         """Print table if table format requested"""
         if (self.format == 'table'):
             print(self.table)

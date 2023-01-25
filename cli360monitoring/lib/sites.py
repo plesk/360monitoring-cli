@@ -25,7 +25,7 @@ class Sites(object):
         self.sum_ttfb = 0
         self.num_monitors = 0
 
-    def fetch_data(self):
+    def fetchData(self):
         """Retrieve the list of all website monitors"""
 
         # if data is already downloaded, use cached data
@@ -45,25 +45,25 @@ class Sites(object):
             self.monitors = response.json()['monitors']
             return True
         else:
-            print_error("An error occurred:", response.status_code)
+            printError("An error occurred:", response.status_code)
             self.monitors = None
             return False
 
     def list(self):
         """Iterate through list of web monitors and print details"""
 
-        if self.fetch_data():
-            self.print_header()
+        if self.fetchData():
+            self.printHeader()
 
             for monitor in self.monitors:
                 self.print(monitor)
 
-            self.print_footer()
+            self.printFooter()
 
     def get(self, pattern: str):
         """Print the data of all web monitors that match the specified url pattern"""
 
-        if pattern and self.fetch_data():
+        if pattern and self.fetchData():
             for monitor in self.monitors:
                 if pattern == monitor['id'] or pattern in monitor['url']:
                     self.print(monitor)
@@ -71,7 +71,7 @@ class Sites(object):
     def add(self, url: str, protocol: str = 'https', name: str = '', force: bool = False):
         """Add a monitor for the given URL"""
 
-        if url and self.fetch_data():
+        if url and self.fetchData():
 
             # urls do not include the protocol
             url = url.replace('https://', "").replace('http://', "")
@@ -109,12 +109,12 @@ class Sites(object):
             if response.status_code == 200:
                 print("Added site monitor:", url)
             else:
-                print_error("Failed to add site monitor", url, "with response code: ", response.status_code)
+                printError("Failed to add site monitor", url, "with response code: ", response.status_code)
 
     def remove(self, pattern: str):
         """Remove the monitor for the given URL"""
 
-        if pattern and self.fetch_data():
+        if pattern and self.fetchData():
 
             removed = 0
             for monitor in self.monitors:
@@ -131,14 +131,14 @@ class Sites(object):
                     if response.status_code == 204:
                         print("Removed site monitor:", url, "[", id, "]")
                     else:
-                        print_error("Failed to remove site monitor", url, "[", id, "] with response code: ", response.status_code)
+                        printError("Failed to remove site monitor", url, "[", id, "] with response code: ", response.status_code)
 
                     return
 
             if removed == 0:
-                print_warn("Monitor with id or url", pattern, "not found")
+                printWarn("Monitor with id or url", pattern, "not found")
 
-    def print_header(self):
+    def printHeader(self):
         """Print CSV header if CSV format requested"""
 
         if (self.format == 'csv'):
@@ -148,7 +148,7 @@ class Sites(object):
         self.sum_ttfb = 0
         self.num_monitors = 0
 
-    def print_footer(self):
+    def printFooter(self):
         """Print table if table format requested"""
 
         if (self.format == 'table'):

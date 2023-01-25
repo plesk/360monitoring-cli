@@ -9,7 +9,7 @@ from lib.sites import Sites
 from lib.usertokens import UserTokens
 import json
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 monitoringconfig = MonitoringConfig()
 cli = argparse.ArgumentParser(description='CLI for 360 Monitoring')
@@ -19,10 +19,10 @@ def config(args):
     """Sub command for config"""
     if args.api_key:
         monitoringconfig.api_key = args.api_key
-        monitoringconfig.save_to_file()
+        monitoringconfig.saveToFile()
 
     elif args.save:
-        monitoringconfig.save_to_file()
+        monitoringconfig.saveToFile()
 
     else:
         monitoringconfig.print()
@@ -36,12 +36,12 @@ def servers(args):
         servers.list()
 
     elif args.get:
-        servers.print_header()
+        servers.printHeader()
 
         for server in args.get:
             servers.get(server)
 
-        servers.print_footer()
+        servers.printFooter()
 
     elif args.add:
         usertokens = UserTokens(monitoringconfig)
@@ -74,12 +74,12 @@ def sites(args):
         sites.list()
 
     elif args.get:
-        sites.print_header()
+        sites.printHeader()
 
         for monitor in args.get:
             sites.get(monitor)
 
-        sites.print_footer()
+        sites.printFooter()
 
     elif args.add:
         for url in args.add:
@@ -110,12 +110,12 @@ def contacts(args):
         contacts.list()
 
     elif args.get:
-        contacts.print_header()
+        contacts.printHeader()
 
         for contact in args.get:
             contacts.get(contact)
 
-        contacts.print_footer()
+        contacts.printFooter()
 
     elif args.add:
         for contact in args.add:
@@ -146,12 +146,12 @@ def usertokens(args):
         usertokens.list()
 
     elif args.get:
-        usertokens.print_header()
+        usertokens.printHeader()
 
         for usertoken in args.get:
             usertokens.get(usertoken)
 
-        usertokens.print_footer()
+        usertokens.printFooter()
 
     elif args.create:
         usertokens.create()
@@ -159,7 +159,7 @@ def usertokens(args):
     else:
         cli_subcommands[args.subparser].print_help()
 
-def perform_cli():
+def performCLI():
     """Parse the command line parameters and call the related functions"""
 
     subparsers = cli.add_subparsers(title='commands', dest='subparser')
@@ -243,7 +243,7 @@ def perform_cli():
         args.func(args)
 
 def main():
-    perform_cli()
+    performCLI()
 
 if __name__ == '__main__':
     main()

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from lib.bcolors import bcolors
 
-def print_error(*args):
+def printError(*args):
     print(f"{bcolors.FAIL}", sep='', end='')
     print(*args, f"{bcolors.ENDC}")
 
-def print_warn(*args):
+def printWarn(*args):
     print(f"{bcolors.WARNING}", sep='', end='')
     print(*args, f"{bcolors.ENDC}")
