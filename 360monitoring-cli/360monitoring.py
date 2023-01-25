@@ -238,5 +238,8 @@ def perform_cli():
     else:
         args.func(args)
 
-if __name__ == '__main__':
+def main():
     perform_cli()
+
+if __name__ == '__main__':
+    main()

@@ -10,7 +10,7 @@ readme = open(os.path.join(here, 'README.md')).read()
 install_requires = ['argparse', 'configparser', 'prettytable', 'requests']
 
 setuptools.setup(
-    name='360monitoring-cli',
+    name='360monitoringcli',
     version='1.0.1',
     description='360 Monitoring CLI',
     long_description_content_type='text/markdown',
@@ -39,7 +39,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            '360monitoring=360monitoring-cli.360monitoring:main',
+            '360monitoring=360monitoringcli.360monitoring:main',
         ],
     },
     data_files=[('share/doc/360monitoring-cli', [
