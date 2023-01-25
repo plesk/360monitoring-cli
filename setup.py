@@ -7,7 +7,8 @@ import setuptools
 here = os.path.abspath(os.path.dirname(__file__))
 
 readme = open(os.path.join(here, 'README.md')).read()
-install_requires = ['argparse', 'configparser', 'prettytable', 'requests']
+#install_requires = ['argparse', 'configparser', 'prettytable', 'requests']
+install_requires = ['configparser', 'prettytable', 'requests']
 
 setuptools.setup(
     name='360monitoringcli',
