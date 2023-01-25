@@ -3,8 +3,9 @@
 
 import os
 import configparser
-from lib.functions import printError
-from lib.bcolors import bcolors
+
+from .functions import printError
+from .bcolors import bcolors
 
 class MonitoringConfig(object):
 

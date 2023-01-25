@@ -3,8 +3,9 @@
 import requests
 import json
 from prettytable import PrettyTable
-from lib.monitoringconfig import MonitoringConfig
-from lib.functions import *
+
+from .monitoringconfig import MonitoringConfig
+from .functions import printError, printWarn
 
 class UserTokens(object):
 

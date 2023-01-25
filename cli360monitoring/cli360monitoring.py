@@ -2,14 +2,15 @@
 
 import os
 import argparse
+import json
+
 from lib.monitoringconfig import MonitoringConfig
 from lib.contacts import Contacts
 from lib.servers import Servers
 from lib.sites import Sites
 from lib.usertokens import UserTokens
-import json
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 monitoringconfig = MonitoringConfig()
 cli = argparse.ArgumentParser(description='CLI for 360 Monitoring')

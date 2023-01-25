@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from lib.bcolors import bcolors
+
+from .bcolors import bcolors
 
 def printError(*args):
     print(f"{bcolors.FAIL}", sep='', end='')
