@@ -13,7 +13,7 @@ class UserTokens(object):
         self.usertokens = None
         self.format = 'table'
         self.table = PrettyTable()
-        self.table.field_names = ["Token"]
+        self.table.field_names = ['Token']
 
     def fetch_data(self):
         """Retrieve the list of all usertokens"""
@@ -34,7 +34,7 @@ class UserTokens(object):
             # Get list of usertokens from response
             json = response.json()
             if 'tokens' in json:
-                self.usertokens = response.json()["tokens"]
+                self.usertokens = response.json()['tokens']
                 return True
             else:
                 self.usertokens = None
@@ -61,7 +61,7 @@ class UserTokens(object):
 
         if pattern and self.fetch_data():
             for usertoken in self.usertokens:
-                if pattern == usertoken["token"]:
+                if pattern == usertoken['token']:
                     self.print(usertoken)
 
     def token(self):

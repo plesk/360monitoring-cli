@@ -14,8 +14,9 @@ class Sites(object):
         self.format = 'table'
 
         self.table = PrettyTable()
-        self.table.field_names = ['URL', 'Uptime %', 'Time to first Byte', 'Location']
+        self.table.field_names = ['URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location']
         self.table.align['URL'] = 'l'
+        self.table.align['Status'] = 'l'
         self.table.align['Uptime %'] = 'r'
         self.table.align['Time to first Byte'] = 'c'
         self.table.align['Location'] = 'c'
@@ -41,7 +42,7 @@ class Sites(object):
         # Check status code of response
         if response.status_code == 200:
             # Get list of servers from response
-            self.monitors = response.json()["monitors"]
+            self.monitors = response.json()['monitors']
             return True
         else:
             print_error("An error occurred:", response.status_code)
@@ -64,29 +65,43 @@ class Sites(object):
 
         if pattern and self.fetch_data():
             for monitor in self.monitors:
-                if pattern == monitor["id"] or pattern in monitor["url"]:
+                if pattern == monitor['id'] or pattern in monitor['url']:
                     self.print(monitor)
 
-    def add(self, url: str):
+    def add(self, url: str, protocol: str = 'https', name: str = '', force: bool = False):
         """Add a monitor for the given URL"""
 
         if url and self.fetch_data():
 
-            for monitor in self.monitors:
-                if monitor["url"] == url:
-                    print(url, "already exists and will not be added")
-                    return
+            # urls do not include the protocol
+            url = url.replace('https://', "").replace('http://', "")
 
-            name = url.replace('https://', "").replace('http://', "")
+            # use the url as name if not specified otherwise
+            if not name:
+                name = url
 
-            if not 'http' in url:
-                url = 'https://' + url
+            # use https as protocol if not specified otherwise
+            if not protocol:
+                protocol = 'https'
+
+            # check if monitored url already exists unless --force is specified
+            if not force:
+                for monitor in self.monitors:
+                    if monitor['url'] == url:
+                        print(url, "already exists and will not be added")
+                        return
+
+            # other parameters:
+            #   port: int (e.g. 443, 80)
+            #   keyword: string that needs to be in the http response body (e.g. "error")
+            #   redirects: int (e.g. 3 max redirects; 0 for no redirects)
+            #   timeout: int (e.g. 30 seconds)
 
             # Make request to API endpoint
             data = {
                 "url": url,
                 "name": name,
-                "protocol": "https"
+                "protocol": protocol
             }
             response = requests.post(self.config.endpoint + "monitors",  data=json.dumps(data), headers=self.config.headers())
 
@@ -103,8 +118,8 @@ class Sites(object):
 
             removed = 0
             for monitor in self.monitors:
-                id = monitor["id"]
-                url = monitor["url"]
+                id = monitor['id']
+                url = monitor['url']
                 if pattern == id or pattern == url:
                     print("Try to remove site monitor:", url, "[", id, "]")
                     removed += 1
@@ -125,8 +140,9 @@ class Sites(object):
 
     def print_header(self):
         """Print CSV header if CSV format requested"""
+
         if (self.format == 'csv'):
-            print('url;uptime_percentage;ttfb;location')
+            print('url;name;code;status;status_message;uptime_percentage;ttfb;location')
 
         self.sum_uptime = 0
         self.sum_ttfb = 0
@@ -134,6 +150,7 @@ class Sites(object):
 
     def print_footer(self):
         """Print table if table format requested"""
+
         if (self.format == 'table'):
 
             avg_uptime = self.sum_uptime / self.num_monitors
@@ -150,7 +167,7 @@ class Sites(object):
                 ttfb_text = "{:.2f}".format(avg_ttfb)
 
             # add average row as table footer
-            self.table.add_row(['Average of ' + str(self.num_monitors) + ' monitors', uptime_percentage_text, ttfb_text, ''])
+            self.table.add_row(['Average of ' + str(self.num_monitors) + ' monitors', '', uptime_percentage_text, ttfb_text, ''])
 
             # Get string to be printed and create list of elements separated by \n
             list_of_table_lines = self.table.get_string().split('\n')
@@ -169,14 +186,21 @@ class Sites(object):
     def print(self, monitor):
         """Print the data of the specified web monitor"""
 
-        url = monitor["url"]
-        location = monitor["monitor"]["name"]
-        uptime_percentage = float(monitor["uptime_percentage"])
-        ttfb = float(monitor["last_check"]["ttfb"])
+        url = monitor['url']
+        name = monitor['name']
+        code = monitor['code']
+        status = monitor['status']
+        status_message = monitor['status_message']
+        location = monitor['monitor']['name']
+        uptime_percentage = float(monitor['uptime_percentage'])
 
-        self.sum_uptime = self.sum_uptime + uptime_percentage
-        self.sum_ttfb = self.sum_ttfb + ttfb
-        self.num_monitors = self.num_monitors + 1
+        if 'last_check' in monitor and 'ttfb' in monitor['last_check']:
+            ttfb = float(monitor['last_check']['ttfb'])
+            self.sum_uptime = self.sum_uptime + uptime_percentage
+            self.sum_ttfb = self.sum_ttfb + ttfb
+            self.num_monitors = self.num_monitors + 1
+        else:
+            ttfb = -1
 
         if (self.format == 'table'):
 
@@ -187,13 +211,15 @@ class Sites(object):
 
             if ttfb >= float(self.config.threshold_ttfb):
                 ttfb_text = f"{bcolors.FAIL}" + "{:.2f}".format(ttfb) + f"{bcolors.ENDC}"
-            else:
+            elif ttfb != -1:
                 ttfb_text = "{:.2f}".format(ttfb)
+            else:
+                ttfb_text = f"{bcolors.FAIL}n/a{bcolors.ENDC}"
 
-            self.table.add_row([url, uptime_percentage_text, ttfb_text, location])
+            self.table.add_row([url, status_message, uptime_percentage_text, ttfb_text, location])
 
         elif (self.format == 'csv'):
-            print(f"{url};{uptime_percentage}%;{ttfb};{location}")
+            print(f"{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
 
         else:
             print(json.dumps(monitor, indent=4))
