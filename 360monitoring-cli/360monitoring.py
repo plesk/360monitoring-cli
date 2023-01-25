@@ -9,7 +9,7 @@ from lib.sites import Sites
 from lib.usertokens import UserTokens
 import json
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 monitoringconfig = MonitoringConfig()
 cli = argparse.ArgumentParser(description='CLI for 360 Monitoring')
@@ -163,6 +163,7 @@ def perform_cli():
     """Parse the command line parameters and call the related functions"""
 
     subparsers = cli.add_subparsers(title='commands', dest='subparser')
+    cli.add_argument('-v', '--version', action='store_true', help='print CLI version')
 
     cli_config = subparsers.add_parser('config', help='configure connection to 360 Monitoring account')
     cli_config.set_defaults(func=config)
@@ -234,7 +235,10 @@ def perform_cli():
 
     args = cli.parse_args()
     if args.subparser == None:
-        cli.print_help()
+        if args.version:
+            print('360 Monitoring CLI Version:', __version__)
+        else:
+            cli.print_help()
     else:
         args.func(args)
 

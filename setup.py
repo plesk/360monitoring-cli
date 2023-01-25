@@ -12,7 +12,7 @@ install_requires = ['configparser', 'prettytable', 'requests']
 
 setuptools.setup(
     name='360monitoringcli',
-    version='1.0.1',
+    version='1.0.2',
     description='360 Monitoring CLI',
     long_description_content_type='text/markdown',
     long_description=readme,
@@ -33,6 +33,8 @@ setuptools.setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: System :: Monitoring',
     ],
     keywords='360 system monitoring cli',
