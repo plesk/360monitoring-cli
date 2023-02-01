@@ -155,8 +155,8 @@ class Sites(object):
 
         if (self.format == 'table'):
 
-            avg_uptime = self.sum_uptime / self.num_monitors
-            avg_ttfb = self.sum_ttfb / self.num_monitors
+            avg_uptime = self.sum_uptime / self.num_monitors if self.sum_uptime > 0 and self.num_monitors > 0 else 0
+            avg_ttfb = self.sum_ttfb / self.num_monitors if self.sum_ttfb > 0 and self.num_monitors > 0 else 0
 
             if avg_uptime <= float(self.config.threshold_uptime):
                 uptime_percentage_text = f"{bcolors.FAIL}" + "{:.4f}".format(avg_uptime) + f"{bcolors.ENDC}"
@@ -189,10 +189,10 @@ class Sites(object):
         """Print the data of the specified web monitor"""
 
         url = monitor['url']
-        name = monitor['name']
-        code = monitor['code']
-        status = monitor['status']
-        status_message = monitor['status_message']
+        name = monitor['name'] if 'name' in monitor else ''
+        code = monitor['code'] if 'code' in monitor else ''
+        status = monitor['status'] if 'status' in monitor else ''
+        status_message = monitor['status_message'] if 'status_message' in monitor else ''
         location = monitor['monitor']['name']
         uptime_percentage = float(monitor['uptime_percentage'])
 

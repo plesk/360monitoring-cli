@@ -48,8 +48,8 @@ class Statistics(object):
                     sum_uptime = sum_uptime + uptime_percentage
                     sum_ttfb = sum_ttfb + ttfb
 
-            avg_uptime = sum_uptime / num_monitors
-            avg_ttfb = sum_ttfb / num_monitors
+            avg_uptime = sum_uptime / num_monitors if sum_uptime > 0 and num_monitors > 0 else 0
+            avg_ttfb = sum_ttfb / num_monitors if sum_ttfb > 0 and num_monitors > 0 else 0
 
             if avg_uptime <= float(self.config.threshold_uptime):
                 uptime_percentage_text = f"{bcolors.FAIL}" + "{:.4f}".format(avg_uptime) + f"{bcolors.ENDC}"

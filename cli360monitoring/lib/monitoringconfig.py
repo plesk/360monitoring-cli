@@ -28,7 +28,7 @@ class MonitoringConfig(object):
                 "Authorization": "Bearer " + self.api_key
             }
         else:
-            printError("ERROR: No API key specified in " + self.filename + ". Please run \"./360monitoring.py config --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.")
+            printError("ERROR: No API key specified in " + self.filename + ". Please run \"360monitoring config --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.")
             return {}
 
     def loadFromFile(self):
@@ -82,7 +82,7 @@ class MonitoringConfig(object):
         if os.path.isfile(self.filename):
             print('config file:               ', self.filename)
         else:
-            print(f"config file:                {bcolors.WARNING}" + self.filename + f" does not exist. Please run \"./360monitoring.py config --api-key YOUR_API_KEY\" to configure.{bcolors.ENDC}")
+            print(f"config file:                {bcolors.WARNING}" + self.filename + f" does not exist. Please run \"360monitoring config --api-key YOUR_API_KEY\" to configure.{bcolors.ENDC}")
         print()
         print('Connection')
         print('----------')
@@ -90,7 +90,7 @@ class MonitoringConfig(object):
         if self.api_key:
             print('api-key:                   ', self.api_key)
         else:
-            print(f"api-key:                    {bcolors.FAIL}No API key specified in " + self.filename + f". Please run \"./360monitoring.py config --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.{bcolors.ENDC}")
+            print(f"api-key:                    {bcolors.FAIL}No API key specified in " + self.filename + f". Please run \"360monitoring config --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.{bcolors.ENDC}")
         print('max items:                 ', self.max_items)
         print()
         print('Thresholds')

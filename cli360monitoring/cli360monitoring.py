@@ -4,6 +4,7 @@ import os
 import argparse
 import json
 
+# suprisingly this works in PyPi, but not locally. For local usage replace ".lib." with "lib."
 from .lib.monitoringconfig import MonitoringConfig
 from .lib.contacts import Contacts
 from .lib.servers import Servers
@@ -11,7 +12,7 @@ from .lib.sites import Sites
 from .lib.usertokens import UserTokens
 from .lib.statistics import Statistics
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 monitoringconfig = MonitoringConfig()
 cli = argparse.ArgumentParser(description='CLI for 360 Monitoring')
@@ -57,8 +58,8 @@ def servers(args):
         if not token:
             print("First create a user token by executing:")
             print()
-            print("./360monitoring.py usertokens --create")
-            print("./360monitoring.py usertokens --list")
+            print("360monitoring usertokens --create")
+            print("360monitoring usertokens --list")
             print()
             token = "[YOUR_USER_TOKEN]"
 
