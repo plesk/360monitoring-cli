@@ -1,3 +1,7 @@
+# 1.0.4
+
+* [*] Added statistics sub command.
+
 # 1.0.1
 
 * [*] Added support for PyPy to simplify installing 360 Monitoring CLI via pip.
