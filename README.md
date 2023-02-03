@@ -9,29 +9,10 @@ You can find the full documentation including the feature complete REST API at [
 ## Preconditions
 
  * Make sure to have an account at https://360monitoring.com or https://platform360.io
- * Make sure to install Python 3.0 and pip3
-
- ## Preconditions for local testing
-
- * To test the code locally, install the Python modules "requests", "configparser", "argparse" and "prettytable"
- * Create an alias for "360monitoring=./cli360monitoring.py"
- * To test a package from staging you can simply deploy a docker container:
-
-    $ docker run -it --rm pypy:3-7-slim-buster /bin/bash
-
- * ... and install the test package from https://test.pypi.org/
-
-    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.5"
 
 ## Install 360 Monitoring CLI as ready-to-use package
 
-    $ pip3 install 360monitoring
-## Local testing only: Install required Python modules
-
-    $ pip3 install requests
-    $ pip3 install configparser
-    $ pip3 install argparse
-    $ pip3 install prettytable
+    $ pip install 360monitoringcli
 
 ## Configure your account
 
@@ -39,6 +20,42 @@ First you need to connect your CLI to your existing 360 Monitoring account via y
 
     $ 360monitoring config --api-key KEY     configure API KEY to connect to 360 Monitoring account
 
+## Test 360 Monitoring CLI locally
+
+### Test 360 Monitoring CLI with pre-configured Docker image
+
+You can easily test and run 360 Monitoring CLI for production by running the pre-configured docker image
+
+    $ docker build -t 360monitoringcli .
+    $ docker run -it --rm 360monitoringcli /bin/bash
+
+### Test 360 Monitoring CLI for specific staging version
+
+ To test a package from staging you can simply deploy a docker container:
+
+    $ docker run -it --rm ubuntu /bin/bash
+    $ apt-get update && apt-get install -y python3 && apt-get install -y pip
+    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.6"
+
+### For developement, install required Python modules
+
+ * To test the code locally, install the Python modules "requests", "configparser", "argparse" and "prettytable"
+ * Create an alias for "360monitoring=./cli360monitoring.py"
+
+    $ pip install requests
+    $ pip install configparser
+    $ pip install argparse
+    $ pip install prettytable
+
+#### Run tests to check each function works
+
+Test the code:
+
+    $ ./test_cli.sh
+
+Test the deployed CLI package:
+
+    $ ./test_cli.sh "360monitoring"
 ## Usage
 
     $ 360monitoring --help                   display general help

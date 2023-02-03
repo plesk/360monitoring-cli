@@ -24,25 +24,41 @@ function test
         echo "-------------------------------------"
         exit 1
     fi
+
+    # check if result contains "ERROR:" and exit if it does
+    LINE=$(grep -m 1 "ERROR:" "$LOG_FILE")
+    if [[ -n "$LINE" ]]; then
+        echo
+        echo "-------------------------------------"
+        echo " Test failed for $1"
+        echo "-------------------------------------"
+        exit 1
+    fi
 }
+
+if [[ -n $1 ]]; then
+    CMD="$1"
+else
+    CMD="./cli360monitoring.py"
+fi
 
 echo "--- Test $NOW ---" > "$LOG_FILE"
 
-test "./cli360monitoring.py"
-test "./cli360monitoring.py config --print"
-test "./cli360monitoring.py statistics"
-test "./cli360monitoring.py usertokens --list"
-test "./cli360monitoring.py contacts --list"
-test "./cli360monitoring.py sites --list"
-test "./cli360monitoring.py sites --list --csv"
-test "./cli360monitoring.py servers --list"
-test "./cli360monitoring.py servers --add"
-test "./cli360monitoring.py servers --remove"
+test "$CMD"
+test "$CMD config --print"
+test "$CMD statistics"
+test "$CMD usertokens --list"
+test "$CMD contacts --list"
+test "$CMD sites --list"
+test "$CMD sites --list --csv"
+test "$CMD servers --list"
+test "$CMD servers --add"
+test "$CMD servers --remove"
 
-test "./cli360monitoring.py sites --add www.bild.de"
+test "$CMD sites --add www.bild.de"
 sleep 10
-test "./cli360monitoring.py sites --get www.bild.de"
-test "./cli360monitoring.py sites --remove www.bild.de"
+test "$CMD sites --get www.bild.de"
+test "$CMD sites --remove www.bild.de"
 
 echo
 echo "-------------------------------------"

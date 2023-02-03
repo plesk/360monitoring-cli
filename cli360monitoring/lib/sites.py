@@ -105,13 +105,13 @@ class Sites(object):
                 "name": name,
                 "protocol": protocol
             }
-            response = requests.post(self.config.endpoint + "monitors",  data=json.dumps(data), headers=self.config.headers())
+            response = requests.post(self.config.endpoint + 'monitors',  data=json.dumps(data), headers=self.config.headers())
 
             # Check status code of response
             if response.status_code == 200:
-                print("Added site monitor:", url)
+                print('Added site monitor:', url)
             else:
-                printError("Failed to add site monitor", url, "with response code: ", response.status_code)
+                printError('Failed to add site monitor', url, 'with response code:', response.status_code)
 
     def remove(self, pattern: str):
         """Remove the monitor for the given URL"""
@@ -123,22 +123,22 @@ class Sites(object):
                 id = monitor['id']
                 url = monitor['url']
                 if pattern == id or pattern == url:
-                    print("Try to remove site monitor:", url, "[", id, "]")
+                    print('Try to remove site monitor:', url, '[', id, ']')
                     removed += 1
 
                     # Make request to API endpoint
-                    response = requests.delete(self.config.endpoint + "monitor/" + id, headers=self.config.headers())
+                    response = requests.delete(self.config.endpoint + 'monitor/' + id, headers=self.config.headers())
 
                     # Check status code of response
                     if response.status_code == 204:
-                        print("Removed site monitor:", url, "[", id, "]")
+                        print('Removed site monitor:', url, '[', id, ']')
                     else:
-                        printError("Failed to remove site monitor", url, "[", id, "] with response code: ", response.status_code)
+                        printError('Failed to remove site monitor', url, '[', id, '] with response code:', response.status_code)
 
                     return
 
             if removed == 0:
-                printWarn("Monitor with id or url", pattern, "not found")
+                printWarn('Monitor with id or url', pattern, 'not found')
 
     def printHeader(self):
         """Print CSV header if CSV format requested"""

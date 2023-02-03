@@ -31,7 +31,39 @@ class Statistics(object):
 
         servers = Servers(self.config)
         if servers.fetchData():
+            sum_cpu_usage = 0
+            sum_mem_usage = 0
+            sum_disk_usage = 0
+            num_servers = len(servers.servers)
             self.printAsset('Servers', len(servers.servers))
+
+            for server in servers.servers:
+                sum_cpu_usage = sum_cpu_usage + server['summary']['cpu_usage_percent'] if 'summary' in server else 0
+                sum_mem_usage = sum_mem_usage + server['summary']['mem_usage_percent'] if 'summary' in server else 0
+                sum_disk_usage = sum_disk_usage + server['summary']['disk_usage_percent'] if 'summary' in server else 0
+
+            avg_cpu_usage = sum_cpu_usage / num_servers if sum_cpu_usage > 0 and num_servers > 0 else 0
+            avg_mem_usage = sum_mem_usage / num_servers if sum_mem_usage > 0 and num_servers > 0 else 0
+            avg_disk_usage = sum_disk_usage / num_servers if sum_disk_usage > 0 and num_servers > 0 else 0
+
+            if avg_cpu_usage >= float(self.config.threshold_cpu_usage):
+                avg_cpu_usage_text = f"{bcolors.FAIL}" + "{:.1f}".format(avg_cpu_usage) + f"{bcolors.ENDC}"
+            else:
+               avg_cpu_usage_text = "{:.1f}".format(avg_cpu_usage)
+
+            if avg_mem_usage >= float(self.config.threshold_mem_usage):
+                avg_mem_usage_text = f"{bcolors.FAIL}" + "{:.1f}".format(avg_mem_usage) + f"{bcolors.ENDC}"
+            else:
+               avg_mem_usage_text = "{:.1f}".format(avg_mem_usage)
+
+            if avg_disk_usage >= float(self.config.threshold_disk_usage):
+                avg_disk_usage_text = f"{bcolors.FAIL}" + "{:.1f}".format(avg_disk_usage) + f"{bcolors.ENDC}"
+            else:
+               avg_disk_usage_text = "{:.1f}".format(avg_disk_usage)
+
+            self.printAsset('% avg cpu usage of all ' + str(num_servers) + ' servers', avg_cpu_usage_text)
+            self.printAsset('% avg mem usage of all ' + str(num_servers) + ' servers', avg_mem_usage_text)
+            self.printAsset('% avg disk usage of all ' + str(num_servers) + ' servers', avg_disk_usage_text)
 
         sites = Sites(self.config)
         if sites.fetchData():
@@ -61,8 +93,8 @@ class Statistics(object):
             else:
                 ttfb_text = "{:.2f}".format(avg_ttfb)
 
-            self.printAsset('% avg uptime of all sites', uptime_percentage_text)
-            self.printAsset('sec avg ttfb of all sites', ttfb_text)
+            self.printAsset('% avg uptime of all ' + str(num_monitors) + ' sites', uptime_percentage_text)
+            self.printAsset('sec avg ttfb of all ' + str(num_monitors) + ' sites', ttfb_text)
 
         contacts = Contacts(self.config)
         if contacts.fetchData():

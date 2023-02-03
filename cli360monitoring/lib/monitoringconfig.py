@@ -17,6 +17,9 @@ class MonitoringConfig(object):
         self.threshold_uptime = 99.0
         self.threshold_ttfb = 1.0
         self.threshold_free_diskspace = 20.0
+        self.threshold_cpu_usage = 80.0
+        self.threshold_mem_usage = 80.0
+        self.threshold_disk_usage = 80.0
 
         self.loadFromFile()
 
@@ -58,6 +61,15 @@ class MonitoringConfig(object):
                 if 'min-free-diskspace-percent' in parser['Thresholds']:
                     self.threshold_free_diskspace = parser['Thresholds']['min-free-diskspace-percent']
 
+                if 'max-cpu-usage-percent' in parser['Thresholds']:
+                    self.threshold_cpu_usage = parser['Thresholds']['max-cpu-usage-percent']
+
+                if 'max-mem-usage-percent' in parser['Thresholds']:
+                    self.threshold_mem_usage = parser['Thresholds']['max-mem-usage-percent']
+
+                if 'max-disk-usage-percent' in parser['Thresholds']:
+                    self.threshold_disk_usage = parser['Thresholds']['max-disk-usage-percent']
+
     def saveToFile(self):
         """Save settings to config file"""
 
@@ -65,12 +77,15 @@ class MonitoringConfig(object):
         parser['Connection'] = {
             'api-key': self.api_key,
             'endpoint': self.endpoint,
-            'max-items': self.max_items
+            'max-items': self.max_items,
         }
         parser['Thresholds'] = {
             'min-uptime-percent': self.threshold_uptime,
             'max-time-to-first-byte': self.threshold_ttfb,
             'min-free-diskspace-percent': self.threshold_free_diskspace,
+            'max-cpu-usage-percent': self.threshold_cpu_usage,
+            'max-mem-usage-percent': self.threshold_mem_usage,
+            'max-disk-usage-percent': self.threshold_disk_usage,
         }
 
         with open(self.filename, 'w') as config_file:
@@ -98,3 +113,6 @@ class MonitoringConfig(object):
         print('min-uptime-percent:        ', self.threshold_uptime)
         print('max-time-to-first-byte:    ', self.threshold_ttfb)
         print('min-free-diskspace-percent:', self.threshold_free_diskspace)
+        print('max-cpu-usage-percent:     ', self.threshold_cpu_usage)
+        print('max-mem-usage-percent:     ', self.threshold_mem_usage)
+        print('max-disk-usage-percent:    ', self.threshold_disk_usage)

@@ -42,7 +42,7 @@ def servers(args):
     servers.format = args.format
 
     if args.list:
-        servers.list()
+        servers.list(args.tag)
 
     elif args.get:
         servers.printHeader()
@@ -70,6 +70,10 @@ def servers(args):
     elif args.remove:
         print("Please login via SSH to each of the servers you would like to remove.")
         print("First stop the monitoring agent by running \"service agent360 stop\" then run \"pip3 uninstall agent360\". After 15 minutes you are able to remove the server.")
+
+    elif args.update:
+        for server in args.update:
+            servers.setTags(server, args.tag)
 
     else:
         cli_subcommands[args.subparser].print_help()
@@ -187,6 +191,9 @@ def performCLI():
     group_servers.add_argument('-g', '--get', nargs='+', metavar='name', help='servers to print')
     group_servers.add_argument('-l', '--list', action='store_true', help='list all monitored servers')
     group_servers.add_argument('-r', '--remove', action='store_true', help='explain how to add a server monitor')
+    group_servers.add_argument('-u', '--update', nargs='+', metavar='name', help='servers to be updated with tags specified via --tag')
+
+    cli_servers.add_argument('--tag', nargs='*', default='', metavar='tag', help='only list servers matching these tags or set these tags for one or more servers specified via --update')
 
     cli_servers.add_argument('--format', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
     cli_servers.add_argument('--json', action='store_const', const='json', dest='format', help='print data in JSON format')
