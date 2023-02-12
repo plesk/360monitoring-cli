@@ -4,7 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 
-from .monitoringconfig import MonitoringConfig
+from .config import Config
 from .servers import Servers
 from .sites import Sites
 from .contacts import Contacts

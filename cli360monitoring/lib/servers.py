@@ -4,7 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 
-from .monitoringconfig import MonitoringConfig
+from .config import Config
 from .functions import printError, printWarn
 from .bcolors import bcolors
 
@@ -15,7 +15,8 @@ class Servers(object):
         self.servers = None
         self.format = 'table'
         self.table = PrettyTable()
-        self.table.field_names = ['Server name', 'IP Address', 'Status', 'OS', 'CPU Usage %', 'Mem Usage %', 'Disk Usage %', 'Disk Info', 'Tags']
+        self.table.field_names = ['ID', 'Server name', 'IP Address', 'Status', 'OS', 'CPU Usage %', 'Mem Usage %', 'Disk Usage %', 'Disk Info', 'Tags']
+        self.table.align['ID'] = 'l'
         self.table.align['Server name'] = 'l'
         self.table.align['Tags'] = 'l'
 
@@ -35,8 +36,11 @@ class Servers(object):
         if not self.config.headers():
             return False
 
+        if self.config.debug:
+            print('GET', self.config.endpoint + 'servers?', self.config.params())
+
         # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'servers', params='perpage=' + str(self.config.max_items), headers=self.config.headers())
+        response = requests.get(self.config.endpoint + 'servers', params=self.config.params(), headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
@@ -51,17 +55,26 @@ class Servers(object):
     def update(self, serverId: str, tags):
         """Update a specific server and add specified tags to it"""
 
-        # Make request to API endpoint
         data = {
             "tags": tags
         }
+
+        if self.config.debug:
+            print('PUT', self.config.endpoint + 'server/' + serverId + '?', data)
+
+        if self.config.readonly:
+            return False
+
+        # Make request to API endpoint
         response = requests.put(self.config.endpoint + 'server/' + serverId,  data=json.dumps(data), headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
             print('Updated tags of server', serverId, 'to', tags)
+            return True
         else:
             printError('Failed to update server', serverId, 'with response code:', response.status_code)
+            return False
 
     def list(self, tags):
         """Iterate through list of server monitors and print details"""
@@ -84,27 +97,21 @@ class Servers(object):
 
             self.printFooter()
 
-    def get(self, pattern: str):
-        """Print the data of all server monitors that match the specified server name"""
-
-        if pattern and self.fetchData():
-            for server in self.servers:
-                if pattern == server['id'] or pattern in server['name']:
-                    self.print(server)
-
     def setTags(self, pattern: str, tags):
         """Set the tags for the server specified with pattern. Pattern can be either the server ID or its name"""
 
         if pattern and len(tags) > 0 and self.fetchData():
             for server in self.servers:
                 if pattern == server['id'] or pattern in server['name']:
-                    self.update(server['id'], tags)
+                    return self.update(server['id'], tags)
+
+        printWarn('No server with given pattern found: ' + pattern)
 
     def printHeader(self):
         """Print CSV if CSV format requested"""
 
         if (self.format == 'csv'):
-            print('server name;ip address;status;os;cpu usage %;mem usage %;disk usage %;free disk space;tags')
+            print('id;server name;ip address;status;os;cpu usage %;mem usage %;disk usage %;free disk space;tags')
 
         self.sum_cpu_usage = 0
         self.sum_mem_usage = 0
@@ -136,7 +143,10 @@ class Servers(object):
                avg_disk_usage_text = "{:.1f}".format(avg_disk_usage) + '%'
 
             # add average row as table footer
-            self.table.add_row(['Average of ' + str(self.num_servers) + ' servers', '', '', '', avg_cpu_usage_text, avg_mem_usage_text, avg_disk_usage_text, '', ''])
+            self.table.add_row(['', 'Average of ' + str(self.num_servers) + ' servers', '', '', '', avg_cpu_usage_text, avg_mem_usage_text, avg_disk_usage_text, '', ''])
+
+            if self.config.hide_ids:
+                self.table.del_column('ID')
 
             # Get string to be printed and create list of elements separated by \n
             list_of_table_lines = self.table.get_string().split('\n')
@@ -155,6 +165,7 @@ class Servers(object):
     def print(self, server):
         """Print the data of the specified server monitor"""
 
+        id = server['id']
         name = server['name']
         os = server['os'] if 'os' in server else ''
         agent_version = server['agent_version'] if 'agent_version' in server else ''
@@ -221,10 +232,10 @@ class Servers(object):
                     disk_info += "{:.0f}".format(free_disk_space_percent) + "% free on " + mount
 
         if (self.format == 'table'):
-            self.table.add_row([name, ip_address, status, os, cpu_usage_percent_text, mem_usage_percent_text, disk_usage_percent_text, disk_info, tags])
+            self.table.add_row([id, name, ip_address, status, os, cpu_usage_percent_text, mem_usage_percent_text, disk_usage_percent_text, disk_info, tags])
 
         elif (self.format == 'csv'):
-            print(f"{name};{ip_address};{status};{os};{cpu_usage_percent};{mem_usage_percent};{disk_usage_percent};{disk_info};{tags}")
+            print(f"{id};{name};{ip_address};{status};{os};{cpu_usage_percent};{mem_usage_percent};{disk_usage_percent};{disk_info};{tags}")
 
         else:
             print(json.dumps(server, indent=4))

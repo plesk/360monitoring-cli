@@ -4,7 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 
-from .monitoringconfig import MonitoringConfig
+from .config import Config
 from .functions import printError, printWarn
 
 class Contacts(object):
@@ -14,10 +14,11 @@ class Contacts(object):
         self.contacts = None
         self.format = 'table'
         self.table = PrettyTable()
-        self.table.field_names = ['Name', 'Email', 'SMS', 'Method']
+        self.table.field_names = ['ID', 'Name', 'Email', 'Phone', 'Method']
+        self.table.align['ID'] = 'l'
         self.table.align['Name'] = 'l'
         self.table.align['Email'] = 'l'
-        self.table.align['SMS'] = 'l'
+        self.table.align['Phone'] = 'l'
         self.table.align['Method'] = 'c'
 
     def fetchData(self):
@@ -31,8 +32,11 @@ class Contacts(object):
         if not self.config.headers():
             return False
 
+        if self.config.debug:
+            print('GET', self.config.endpoint + 'contacts?', self.config.params())
+
         # Make request to API endpoint
-        response = requests.get(self.config.endpoint + "contacts", params="perpage=" + str(self.config.max_items), headers=self.config.headers())
+        response = requests.get(self.config.endpoint + 'contacts', params=self.config.params(), headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
@@ -40,108 +44,126 @@ class Contacts(object):
             self.contacts = response.json()['contacts']
             return True
         else:
-            printError("An error occurred:", response.status_code)
+            printError('An error occurred:', response.status_code)
             self.contacts = None
             return False
 
-    def list(self):
+    def list(self, id: str = '', name: str = '', email: str = '', phone: str = ''):
         """Iterate through list of contacts and print details"""
 
         if self.fetchData():
             self.printHeader()
 
             for contact in self.contacts:
-                self.print(contact)
+                if (id or name or email or phone):
+                    if (id and 'id' in contact and contact['id'] == id) \
+                        or (name and 'name' in contact and contact['name'] == name) \
+                        or (email and 'email' in contact and contact['email'] == email) \
+                        or (phone and 'phonenumber' in contact and contact['phonenumber'] == phone):
+                        self.print(contact)
+                else:
+                    self.print(contact)
 
             self.printFooter()
 
-    def get(self, pattern: str):
-        """Print the data of all contacts that match the specified name pattern"""
-
-        if pattern and self.fetchData():
-            for contact in self.contacts:
-                if pattern == contact['id'] or pattern in contact['name'] or pattern == contact['email']:
-                    self.print(contact)
-
-    def add(self, name: str, email: str, sms: str = ''):
+    def add(self, name: str, email: str = '', sms: str = ''):
         """Add a contact for the given name"""
 
         if name and self.fetchData():
 
             for contact in self.contacts:
                 if contact['name'] == name:
-                    print(name, "already exists and will not be added")
-                    return
+                    print(name, 'already exists and will not be added')
+                    return False
 
             # Make request to API endpoint
             data = {
-                "name": name,
-                "channels": {
-                    "email": email,
-                    "sms": sms
+                'name': name,
+                'channels': {
+                    'email': email,
+                    'sms': sms
                 }
             }
-            response = requests.post(self.config.endpoint + "contacts",  data=json.dumps(data), headers=self.config.headers())
+
+            if self.config.debug:
+                print('POST', self.config.endpoint + 'contacts?', data)
+
+            if self.config.readonly:
+                return False
+
+            response = requests.post(self.config.endpoint + 'contacts',  data=json.dumps(data), headers=self.config.headers())
 
             # Check status code of response
             if response.status_code == 200:
-                print("Added contact:", name)
+                print('Added contact:', name)
+                return True
             else:
-                printError("Failed to add contact", name, "with response code: ", response.status_code)
+                printError('Failed to add contact', name, 'with response code:', response.status_code)
+                return False
 
-    def remove(self, pattern: str):
+        else:
+            return False
+
+    def remove(self, id: str = '', name: str = '', email: str = '', phone: str = ''):
         """Remove the contact for the given name"""
 
-        if pattern and self.fetchData():
-
-            removed = 0
+        if (id or name or email or phone) and self.fetchData():
             for contact in self.contacts:
-                id = contact['id']
-                name = contact['name']
-                email = contact['email'] if 'email' in contact else ''
-                sms = contact['phonenumber'] if 'phonenumber' in contact else ''
+                curr_id = contact['id']
+                curr_name = contact['name']
+                curr_email = contact['email'] if 'email' in contact else ''
+                curr_phone = contact['phonenumber'] if 'phonenumber' in contact else ''
 
-                if pattern == id or pattern == name or pattern == email or pattern == sms:
-                    print("Try to remove contact:", name, "[", id, "]")
-                    removed += 1
+                if (id == curr_id) \
+                    or (name and name == curr_name) \
+                    or (email and email == curr_email) \
+                    or (phone and phone == curr_phone):
+
+                    if self.config.debug:
+                        print('DELETE', self.config.endpoint + 'contacts/' + curr_id)
+
+                    if self.config.readonly:
+                        return False
 
                     # Make request to API endpoint
-                    response = requests.delete(self.config.endpoint + "contact/" + id, headers=self.config.headers())
+                    response = requests.delete(self.config.endpoint + 'contact/' + curr_id, headers=self.config.headers())
 
                     # Check status code of response
                     if response.status_code == 204:
-                        print("Removed contact:", name, "[", id, "]")
+                        print('Removed contact:', curr_name, '[', curr_id, ']')
+                        return True
                     else:
-                        printError("Failed to remove contact", name, "[", id, "] with response code: ", response.status_code)
+                        printError('Failed to remove contact', curr_name, '[', curr_id, '] with response code:', response.status_code)
+                        return False
 
-                    return
-
-            if removed == 0:
-                printWarn("Contact with id or name", pattern, "not found")
+        printWarn('No contact with given pattern found: id=' + id, 'name=' + name, 'email=' + email, 'phone=' + phone)
 
     def printHeader(self):
         """Print CSV header if CSV format requested"""
         if (self.format == 'csv'):
-            print('name;email;sms;method')
+            print('id;name;email;phone;method')
 
     def printFooter(self):
         """Print table if table format requested"""
         if (self.format == 'table'):
+            if self.config.hide_ids:
+                self.table.del_column('ID')
             print(self.table)
 
     def print(self, contact):
         """Print the data of the specified contact"""
 
+        id = contact['id']
         name = contact['name']
         email = contact['email'] if 'email' in contact else ''
-        sms = contact['phonenumber'] if 'phonenumber' in contact else ''
+        phone = contact['phonenumber'] if 'phonenumber' in contact else ''
         method = contact['method'] if 'method' in contact else ''
 
         if (self.format == 'table'):
-            self.table.add_row([name, email, sms, method])
+            self.table.add_row([id, name, email, phone, method])
 
         elif (self.format == 'csv'):
-            print(f"{name};{email};{sms};{method}")
+            print(f"{id};{name};{email};{phone};{method}")
 
         else:
             print(json.dumps(contact, indent=4))

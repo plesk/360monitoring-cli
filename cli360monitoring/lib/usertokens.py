@@ -4,7 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 
-from .monitoringconfig import MonitoringConfig
+from .config import Config
 from .functions import printError, printWarn
 
 class UserTokens(object):
@@ -27,8 +27,11 @@ class UserTokens(object):
         if not self.config.headers():
             return False
 
+        if self.config.debug:
+            print('GET', self.config.endpoint + 'usertoken?', self.config.params())
+
         # Make request to API endpoint
-        response = requests.get(self.config.endpoint + "usertoken", params="perpage=" + str(self.config.max_items), headers=self.config.headers())
+        response = requests.get(self.config.endpoint + 'usertoken', params=self.config.params(), headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
@@ -41,11 +44,11 @@ class UserTokens(object):
                 self.usertokens = None
                 return False
         else:
-            printError("An error occurred:", response.status_code)
+            printError('An error occurred:', response.status_code)
             self.usertokens = None
             return False
 
-    def list(self):
+    def list(self, token: str = ''):
         """Iterate through list of usertokens and print details"""
 
         if self.fetchData():
@@ -53,17 +56,14 @@ class UserTokens(object):
 
             if self.usertokens != None:
                 for usertoken in self.usertokens:
-                    self.print(usertoken)
+                    if token:
+                        if usertoken['token'] == token:
+                            self.print(usertoken)
+                            break
+                    else:
+                        self.print(usertoken)
 
             self.printFooter()
-
-    def get(self, pattern: str):
-        """Print the data of all usertokens that match the specified pattern"""
-
-        if pattern and self.fetchData():
-            for usertoken in self.usertokens:
-                if pattern == usertoken['token']:
-                    self.print(usertoken)
 
     def token(self):
         """Print the data of first usertoken"""
@@ -78,14 +78,20 @@ class UserTokens(object):
         if not self.config.headers():
             return False
 
-        response = requests.post(self.config.endpoint + "usertoken",  headers=self.config.headers())
+        if self.config.debug:
+            print('POST', self.config.endpoint + 'usertoken', self.config.params())
+
+        if self.config.readonly:
+            return False
+
+        response = requests.post(self.config.endpoint + 'usertoken',  headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
-            print("Created usertoken")
+            print('Created usertoken')
             return True
         else:
-            printError("Failed to create usertoken with response code: ", response.status_code)
+            printError('Failed to create usertoken with response code:', response.status_code)
             return False
 
     def printHeader(self):

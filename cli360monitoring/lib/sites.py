@@ -4,7 +4,7 @@ import requests
 import json
 from prettytable import PrettyTable
 
-from .monitoringconfig import MonitoringConfig
+from .config import Config
 from .functions import printError, printWarn
 from .bcolors import bcolors
 
@@ -16,7 +16,8 @@ class Sites(object):
         self.format = 'table'
 
         self.table = PrettyTable()
-        self.table.field_names = ['URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location']
+        self.table.field_names = ['ID', 'URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location']
+        self.table.align['ID'] = 'l'
         self.table.align['URL'] = 'l'
         self.table.align['Status'] = 'l'
         self.table.align['Uptime %'] = 'r'
@@ -38,8 +39,11 @@ class Sites(object):
         if not self.config.headers():
             return False
 
+        if self.config.debug:
+            print('GET', self.config.endpoint + 'monitors?', self.config.params())
+
         # Make request to API endpoint
-        response = requests.get(self.config.endpoint + "monitors", params="perpage=" + str(self.config.max_items), headers=self.config.headers())
+        response = requests.get(self.config.endpoint + 'monitors', params=self.config.params(), headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
@@ -47,28 +51,28 @@ class Sites(object):
             self.monitors = response.json()['monitors']
             return True
         else:
-            printError("An error occurred:", response.status_code)
+            printError('An error occurred:', response.status_code)
             self.monitors = None
             return False
 
-    def list(self):
+    def list(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = ''):
         """Iterate through list of web monitors and print details"""
 
         if self.fetchData():
             self.printHeader()
 
             for monitor in self.monitors:
-                self.print(monitor)
+                if (id or url or name or location or pattern):
+                    if (id and monitor['id'] == id) \
+                        or (url and monitor['url'] == url) \
+                        or (name and 'name' in monitor and monitor['name'] == name) \
+                        or (location and location in monitor['monitor']['name']) \
+                        or (pattern and pattern in monitor['url']):
+                        self.print(monitor)
+                else:
+                    self.print(monitor)
 
             self.printFooter()
-
-    def get(self, pattern: str):
-        """Print the data of all web monitors that match the specified url pattern"""
-
-        if pattern and self.fetchData():
-            for monitor in self.monitors:
-                if pattern == monitor['id'] or pattern in monitor['url']:
-                    self.print(monitor)
 
     def add(self, url: str, protocol: str = 'https', name: str = '', force: bool = False):
         """Add a monitor for the given URL"""
@@ -76,7 +80,7 @@ class Sites(object):
         if url and self.fetchData():
 
             # urls do not include the protocol
-            url = url.replace('https://', "").replace('http://', "")
+            url = url.replace('https://', '').replace('http://', '')
 
             # use the url as name if not specified otherwise
             if not name:
@@ -90,7 +94,7 @@ class Sites(object):
             if not force:
                 for monitor in self.monitors:
                     if monitor['url'] == url:
-                        print(url, "already exists and will not be added")
+                        print(url, 'already exists and will not be added')
                         return
 
             # other parameters:
@@ -101,50 +105,73 @@ class Sites(object):
 
             # Make request to API endpoint
             data = {
-                "url": url,
-                "name": name,
-                "protocol": protocol
+                'url': url,
+                'name': name,
+                'protocol': protocol
             }
+
+            if self.config.debug:
+                print('POST', self.config.endpoint + 'monitors?', data)
+
+            if self.config.readonly:
+                return False
+
             response = requests.post(self.config.endpoint + 'monitors',  data=json.dumps(data), headers=self.config.headers())
 
             # Check status code of response
             if response.status_code == 200:
                 print('Added site monitor:', url)
+                return True
             else:
                 printError('Failed to add site monitor', url, 'with response code:', response.status_code)
+                return False
 
-    def remove(self, pattern: str):
+        else:
+            return False
+
+    def remove(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = ''):
         """Remove the monitor for the given URL"""
 
-        if pattern and self.fetchData():
-
-            removed = 0
+        removed = 0
+        if (id or url or name or location or pattern) and self.fetchData():
             for monitor in self.monitors:
-                id = monitor['id']
-                url = monitor['url']
-                if pattern == id or pattern == url:
-                    print('Try to remove site monitor:', url, '[', id, ']')
+                curr_id = monitor['id']
+                curr_url = monitor['url']
+                curr_name = monitor['name'] if 'name' in monitor else ''
+                curr_location = monitor['monitor']['name']
+
+                if (id == curr_id) \
+                    or (url and url == curr_url) \
+                    or (name and name == curr_name) \
+                    or (location and location in curr_location) \
+                    or (pattern and pattern in curr_url):
                     removed += 1
 
+                    if self.config.debug:
+                        print('DELETE', self.config.endpoint + 'monitor/' + curr_id)
+
+                    if self.config.readonly:
+                        return False
+
                     # Make request to API endpoint
-                    response = requests.delete(self.config.endpoint + 'monitor/' + id, headers=self.config.headers())
+                    response = requests.delete(self.config.endpoint + 'monitor/' + curr_id, headers=self.config.headers())
 
                     # Check status code of response
                     if response.status_code == 204:
-                        print('Removed site monitor:', url, '[', id, ']')
+                        print('Removed site monitor:', curr_url, '[', curr_id, ']')
+                        return True
                     else:
-                        printError('Failed to remove site monitor', url, '[', id, '] with response code:', response.status_code)
+                        printError('Failed to remove site monitor', curr_url, '[', curr_id, '] with response code:', response.status_code)
+                        return False
 
-                    return
-
-            if removed == 0:
-                printWarn('Monitor with id or url', pattern, 'not found')
+        if removed == 0:
+            printWarn('No monitors with given pattern found: id=' + id, 'url=', url, 'name=' + name, 'location=' + location, 'pattern=' + pattern)
 
     def printHeader(self):
         """Print CSV header if CSV format requested"""
 
         if (self.format == 'csv'):
-            print('url;name;code;status;status_message;uptime_percentage;ttfb;location')
+            print('id;url;name;code;status;status_message;uptime_percentage;ttfb;location')
 
         self.sum_uptime = 0
         self.sum_ttfb = 0
@@ -169,7 +196,10 @@ class Sites(object):
                 ttfb_text = "{:.2f}".format(avg_ttfb)
 
             # add average row as table footer
-            self.table.add_row(['Average of ' + str(self.num_monitors) + ' monitors', '', uptime_percentage_text, ttfb_text, ''])
+            self.table.add_row(['', 'Average of ' + str(self.num_monitors) + ' monitors', '', uptime_percentage_text, ttfb_text, ''])
+
+            if self.config.hide_ids:
+                self.table.del_column('ID')
 
             # Get string to be printed and create list of elements separated by \n
             list_of_table_lines = self.table.get_string().split('\n')
@@ -188,6 +218,7 @@ class Sites(object):
     def print(self, monitor):
         """Print the data of the specified web monitor"""
 
+        id = monitor['id']
         url = monitor['url']
         name = monitor['name'] if 'name' in monitor else ''
         code = monitor['code'] if 'code' in monitor else ''
@@ -218,10 +249,10 @@ class Sites(object):
             else:
                 ttfb_text = f"{bcolors.FAIL}n/a{bcolors.ENDC}"
 
-            self.table.add_row([url, status_message, uptime_percentage_text, ttfb_text, location])
+            self.table.add_row([id, url, status_message, uptime_percentage_text, ttfb_text, location])
 
         elif (self.format == 'csv'):
-            print(f"{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
+            print(f"{id};{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
 
         else:
             print(json.dumps(monitor, indent=4))

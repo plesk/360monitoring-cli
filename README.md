@@ -35,7 +35,7 @@ You can easily test and run 360 Monitoring CLI for production by running the pre
 
     $ docker run -it --rm ubuntu /bin/bash
     $ apt-get update && apt-get install -y python3 && apt-get install -y pip
-    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.6"
+    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.7"
 
 ### For developement, install required Python modules
 
