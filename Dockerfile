@@ -7,5 +7,5 @@ COPY cli360monitoring/test_cli.sh /
 
 ENV api-key=""
 
-#ENTRYPOINT [ "360monitoring", "config", "--api-key" ]
-CMD ["sh", "-c", "360monitoring config --api-key ${api-key};360monitoring sites --list;./test_cli.sh"]
+#ENTRYPOINT [ "360monitoring", "config", "save", "--api-key" ]
+CMD ["sh", "-c", "360monitoring config save --api-key ${api-key};360monitoring sites list;./test_cli.sh"]

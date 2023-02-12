@@ -18,7 +18,7 @@ You can find the full documentation including the feature complete REST API at [
 
 First you need to connect your CLI to your existing 360 Monitoring account via your API KEY. If you don't have a 360 Monitoring account yet, please register for free at https://360monitoring.com. To create an API KEY you'll need to upgrade at least to a Pro plan to be able to create your API KEY.
 
-    $ 360monitoring config --api-key KEY     configure API KEY to connect to 360 Monitoring account
+    $ 360monitoring config save --api-key KEY     configure API KEY to connect to 360 Monitoring account
 
 ## Test 360 Monitoring CLI locally
 
@@ -40,7 +40,7 @@ You can easily test and run 360 Monitoring CLI for production by running the pre
 ### For developement, install required Python modules
 
  * To test the code locally, install the Python modules "requests", "configparser", "argparse" and "prettytable"
- * Create an alias for "360monitoring=./cli360monitoring.py"
+ * Create an alias for "360monitoring=./monitoring.py"
 
     $ pip install requests
     $ pip install configparser
@@ -58,14 +58,16 @@ Test the deployed CLI package:
     $ ./test_cli.sh "360monitoring"
 ## Usage
 
-    $ 360monitoring --help                   display general help
-    $ 360monitoring statistics               display all assets of your account
-    $ 360monitoring servers --list           display all monitored servers
-    $ 360monitoring sites --list             display all monitored sites
-    $ 360monitoring contacts --list          display all contacts
-    $ 360monitoring usertokens --list        display user tokens
-    $ 360monitoring config --print           display your current settings and where those are stored
+    $ 360monitoring --help                        display general help
+    $ 360monitoring config save --api-key KEY     configure API KEY to connect to 360 Monitoring account
+    $ 360monitoring statistics                    display all assets of your account
+    $ 360monitoring servers list                  display all monitored servers
+    $ 360monitoring sites list                    display all monitored sites
+    $ 360monitoring contacts list                 display all contacts
+    $ 360monitoring usertokens list               display user tokens
+    $ 360monitoring config print                  display your current settings and where those are stored
 
-    $ 360monitoring sites --add domain.tld   start monitoring a new website
+    $ 360monitoring sites add --url domain.tld    start monitoring a new website
+    $ 360monitoring servers update --name cpanel123.hoster.com --tag production   tag a specific server
 
-    $ 360monitoring contacts --help          display specific help for a sub command
+    $ 360monitoring contacts --help               display specific help for a sub command
