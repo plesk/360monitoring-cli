@@ -76,7 +76,7 @@ class Servers(object):
             printError('Failed to update server', serverId, 'with response code:', response.status_code)
             return False
 
-    def list(self, tags):
+    def list(self, issuesOnly: bool, tags):
         """Iterate through list of server monitors and print details"""
 
         if self.fetchData():
@@ -85,7 +85,8 @@ class Servers(object):
             # Iterate through list of monitors and print urls, etc.
             for server in self.servers:
                 if len(tags) == 0:
-                    self.print(server)
+                    if (not issuesOnly) or self.hasIssue(server):
+                        self.print(server)
                 elif 'tags' in server:
                     match = True
                     for tag in tags:
@@ -93,7 +94,8 @@ class Servers(object):
                             match = False
                             break
                     if match:
-                        self.print(server)
+                        if (not issuesOnly) or self.hasIssue(server):
+                            self.print(server)
 
             self.printFooter()
 
@@ -106,6 +108,31 @@ class Servers(object):
                     return self.update(server['id'], tags)
 
         printWarn('No server with given pattern found: ' + pattern)
+
+    def hasIssue(self, server):
+        """Return True if the specified server has some issue by having a value outside of the expected threshold specified in config file"""
+
+        cpu_usage_percent = server['summary']['cpu_usage_percent'] if 'summary' in server else 0
+        mem_usage_percent = server['summary']['mem_usage_percent'] if 'summary' in server else 0
+        disk_usage_percent = server['summary']['disk_usage_percent'] if 'summary' in server else 0
+
+        if cpu_usage_percent >= float(self.config.threshold_cpu_usage) \
+            or mem_usage_percent >= float(self.config.threshold_mem_usage) \
+            or disk_usage_percent >= float(self.config.threshold_disk_usage):
+            return True
+
+        last_data = server['last_data']
+        if 'df' in last_data:
+            for disk in last_data['df']:
+                free_disk_space = disk['free_bytes']
+                used_disk_space = disk['used_bytes']
+                total_disk_space = free_disk_space + used_disk_space
+                free_disk_space_percent = free_disk_space / total_disk_space * 100
+
+                if free_disk_space_percent <= float(self.config.threshold_free_diskspace):
+                    return True
+
+        return False
 
     def printHeader(self):
         """Print CSV if CSV format requested"""

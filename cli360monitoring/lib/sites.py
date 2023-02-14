@@ -55,7 +55,7 @@ class Sites(object):
             self.monitors = None
             return False
 
-    def list(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = ''):
+    def list(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = '', issuesOnly: bool = False):
         """Iterate through list of web monitors and print details"""
 
         if self.fetchData():
@@ -68,9 +68,11 @@ class Sites(object):
                         or (name and 'name' in monitor and monitor['name'] == name) \
                         or (location and location in monitor['monitor']['name']) \
                         or (pattern and pattern in monitor['url']):
-                        self.print(monitor)
+                        if (not issuesOnly) or self.hasIssue(monitor):
+                            self.print(monitor)
                 else:
-                    self.print(monitor)
+                    if (not issuesOnly) or self.hasIssue(monitor):
+                        self.print(monitor)
 
             self.printFooter()
 
@@ -166,6 +168,18 @@ class Sites(object):
 
         if removed == 0:
             printWarn('No monitors with given pattern found: id=' + id, 'url=', url, 'name=' + name, 'location=' + location, 'pattern=' + pattern)
+
+    def hasIssue(self, monitor):
+        """Return True if the specified monitor has some issue by having a value outside of the expected threshold specified in config file"""
+
+        if float(monitor['uptime_percentage']) <= float(self.config.threshold_uptime):
+            return True
+
+        if 'last_check' in monitor and 'ttfb' in monitor['last_check']:
+            if float(monitor['last_check']['ttfb']) >= float(self.config.threshold_ttfb):
+                return True
+
+        return False
 
     def printHeader(self):
         """Print CSV header if CSV format requested"""

@@ -1,3 +1,6 @@
+# 1.0.9
+
+* [*] Now you can show only sites or servers that have issues with "list --issues".
 # 1.0.7
 
 * [*] Print more data for servers. Added ability to set tags for specified servers. Added more statistics.

@@ -12,7 +12,7 @@ from .lib.sites import Sites
 from .lib.usertokens import UserTokens
 from .lib.statistics import Statistics
 
-__version__ = '1.0.8'
+__version__ = '1.0.9'
 
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
@@ -87,8 +87,8 @@ def servers_add(args):
     if not token:
         print('First create a user token by executing:')
         print()
-        print('360monitoring usertokens --create')
-        print('360monitoring usertokens --list')
+        print('360monitoring usertokens create')
+        print('360monitoring usertokens list')
         print()
         token = '[YOUR_USER_TOKEN]'
 
@@ -101,7 +101,7 @@ def servers_list(args):
     check_columns(args.columns)
     servers = Servers(cfg)
     servers.format = args.output
-    servers.list(args.tag)
+    servers.list(args.issues, args.tag)
 
 def servers_remove(args):
     """Sub command for servers remove"""
@@ -146,7 +146,7 @@ def sites_list(args):
     check_columns(args.columns)
     sites = Sites(cfg)
     sites.format = args.output
-    sites.list(id=args.id, url=args.url, name=args.name, location=args.location, pattern=args.pattern)
+    sites.list(id=args.id, url=args.url, name=args.name, location=args.location, pattern=args.pattern, issuesOnly=args.issues)
 
 def sites_remove(args):
     """Sub command for sites remove"""
@@ -249,6 +249,7 @@ def performCLI():
     cli_servers_list.add_argument('--id', nargs='?', default='', metavar='id', help='update server with given ID')
     cli_servers_list.add_argument('--name', nargs='?', default='', metavar='name', help='update server with given name')
     cli_servers_list.add_argument('--tag', nargs='*', default='', metavar='tag', help='only list servers matching these tags')
+    cli_servers_list.add_argument('--issues', action='store_true', help='show only servers with issues')
 
     cli_servers_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
     cli_servers_list.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
@@ -287,6 +288,7 @@ def performCLI():
     cli_sites_list.add_argument('--name', nargs='?', default='', metavar='name', help='list site with given name')
     cli_sites_list.add_argument('--location', nargs='?', default='', metavar='location', help='list sites monitored from given location')
     cli_sites_list.add_argument('--pattern', nargs='?', default='', metavar='pattern', help='list sites with pattern included in URL')
+    cli_sites_list.add_argument('--issues', action='store_true', help='show only sites with issues')
 
     cli_sites_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
     cli_sites_list.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
