@@ -74,3 +74,8 @@ Test the deployed CLI package:
     $ 360monitoring servers update --name cpanel123.hoster.com --tag production   tag a specific server
 
     $ 360monitoring contacts --help               display specific help for a sub command
+
+## Updating 360 Monitoring CLI package
+You can update the 360monitoringcli package to the latest version using the following command:
+
+    $ pip install 360monitoringcli --upgrade
