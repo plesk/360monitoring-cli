@@ -107,13 +107,13 @@ class UserTokens(object):
     def print(self, usertoken):
         """Print the data of the specified usertoken"""
 
+        if (self.format == 'json'):
+            print(json.dumps(usertoken, indent=4))
+            return
+
         token = usertoken['token']
 
-        if (self.format == 'table'):
-            self.table.add_row([token])
-
-        elif (self.format == 'csv'):
+        if (self.format == 'csv'):
             print(f"{token}")
-
         else:
-            print(json.dumps(usertoken, indent=4))
+            self.table.add_row([token])

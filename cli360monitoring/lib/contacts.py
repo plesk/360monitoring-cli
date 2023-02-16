@@ -153,17 +153,17 @@ class Contacts(object):
     def print(self, contact):
         """Print the data of the specified contact"""
 
+        if (self.format == 'json'):
+            print(json.dumps(contact, indent=4))
+            return
+
         id = contact['id']
         name = contact['name']
         email = contact['email'] if 'email' in contact else ''
         phone = contact['phonenumber'] if 'phonenumber' in contact else ''
         method = contact['method'] if 'method' in contact else ''
 
-        if (self.format == 'table'):
-            self.table.add_row([id, name, email, phone, method])
-
-        elif (self.format == 'csv'):
+        if (self.format == 'csv'):
             print(f"{id};{name};{email};{phone};{method}")
-
         else:
-            print(json.dumps(contact, indent=4))
+            self.table.add_row([id, name, email, phone, method])

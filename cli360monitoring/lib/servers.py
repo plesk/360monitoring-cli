@@ -192,6 +192,10 @@ class Servers(object):
     def print(self, server):
         """Print the data of the specified server monitor"""
 
+        if (self.format == 'json'):
+            print(json.dumps(server, indent=4))
+            return
+
         id = server['id']
         name = server['name']
         os = server['os'] if 'os' in server else ''
@@ -205,9 +209,15 @@ class Servers(object):
         memory_available = last_data['memory']['available'] if 'memory' in last_data else 0
         memory_total = last_data['memory']['total'] if 'memory' in last_data else 0
         connecting_ip = server['connecting_ip'] if 'connecting_ip' in server else ''
-        ip_address = server['ip_whois']['ip'] if 'ip_whois' in server else ''
-        ip_country = server['ip_whois']['country'] if 'ip_whois' in server else ''
-        ip_hoster = server['ip_whois']['org'] if 'ip_whois' in server else ''
+        if 'ip_whois' in server:
+            ip_whois = server['ip_whois']
+            ip_address = ip_whois['ip'] if 'ip' in ip_whois else ''
+            ip_country = ip_whois['country'] if 'country' in ip_whois else ''
+            ip_hoster = ip_whois['org'] if 'org' in ip_whois else ''
+        else:
+            ip_address = ''
+            ip_country = ''
+            ip_hoster = ''
         cpu_usage_percent = server['summary']['cpu_usage_percent'] if 'summary' in server else 0
         mem_usage_percent = server['summary']['mem_usage_percent'] if 'summary' in server else 0
         disk_usage_percent = server['summary']['disk_usage_percent'] if 'summary' in server else 0
@@ -258,11 +268,7 @@ class Servers(object):
                 else:
                     disk_info += "{:.0f}".format(free_disk_space_percent) + "% free on " + mount
 
-        if (self.format == 'table'):
-            self.table.add_row([id, name, ip_address, status, os, cpu_usage_percent_text, mem_usage_percent_text, disk_usage_percent_text, disk_info, tags])
-
-        elif (self.format == 'csv'):
+        if (self.format == 'csv'):
             print(f"{id};{name};{ip_address};{status};{os};{cpu_usage_percent};{mem_usage_percent};{disk_usage_percent};{disk_info};{tags}")
-
         else:
-            print(json.dumps(server, indent=4))
+            self.table.add_row([id, name, ip_address, status, os, cpu_usage_percent_text, mem_usage_percent_text, disk_usage_percent_text, disk_info, tags])

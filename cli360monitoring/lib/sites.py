@@ -232,6 +232,10 @@ class Sites(object):
     def print(self, monitor):
         """Print the data of the specified web monitor"""
 
+        if (self.format == 'json'):
+            print(json.dumps(monitor, indent=4))
+            return
+
         id = monitor['id']
         url = monitor['url']
         name = monitor['name'] if 'name' in monitor else ''
@@ -249,8 +253,9 @@ class Sites(object):
         else:
             ttfb = -1
 
-        if (self.format == 'table'):
-
+        if (self.format == 'csv'):
+            print(f"{id};{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
+        else:
             if uptime_percentage <= float(self.config.threshold_uptime):
                 uptime_percentage_text = f"{bcolors.FAIL}" + "{:.4f}".format(uptime_percentage) + f"{bcolors.ENDC}"
             else:
@@ -264,9 +269,3 @@ class Sites(object):
                 ttfb_text = f"{bcolors.FAIL}n/a{bcolors.ENDC}"
 
             self.table.add_row([id, url, status_message, uptime_percentage_text, ttfb_text, location])
-
-        elif (self.format == 'csv'):
-            print(f"{id};{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
-
-        else:
-            print(json.dumps(monitor, indent=4))

@@ -121,8 +121,7 @@ class Statistics(object):
     def printAsset(self, asset: str, value):
         """Print the data of the specified web monitor"""
 
-        if (self.format == 'table'):
-            self.table.add_row([value, asset])
-
-        elif (self.format == 'csv'):
+        if (self.format == 'csv'):
             print(f"{asset};{value}")
+        else:
+            self.table.add_row([value, asset])
