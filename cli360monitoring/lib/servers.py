@@ -209,7 +209,7 @@ class Servers(object):
         memory_available = last_data['memory']['available'] if 'memory' in last_data else 0
         memory_total = last_data['memory']['total'] if 'memory' in last_data else 0
         connecting_ip = server['connecting_ip'] if 'connecting_ip' in server else ''
-        if 'ip_whois' in server:
+        if 'ip_whois' in server and server['ip_whois']:
             ip_whois = server['ip_whois']
             ip_address = ip_whois['ip'] if 'ip' in ip_whois else ''
             ip_country = ip_whois['country'] if 'country' in ip_whois else ''
