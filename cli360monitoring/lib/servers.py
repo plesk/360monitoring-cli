@@ -243,7 +243,7 @@ class Servers(object):
             disk_usage_percent_text = "{:.1f}".format(disk_usage_percent) + '%'
 
         tags = ''
-        if 'tags' in server:
+        if 'tags' in server and server['tags']:
             for tag in server['tags']:
                 if tags:
                     tags += ', ' + tag

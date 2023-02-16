@@ -3,6 +3,7 @@
 import os
 import argparse
 import json
+import webbrowser
 
 # suprisingly this works in PyPi, but not locally. For local usage replace ".lib." with "lib."
 from .lib.config import Config
@@ -12,7 +13,7 @@ from .lib.sites import Sites
 from .lib.usertokens import UserTokens
 from .lib.statistics import Statistics
 
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
@@ -78,6 +79,12 @@ def contacts(args):
     """Sub command for contacts"""
     cli_subcommands[args.subparser].print_help()
 
+# --- dashboard functions ---
+
+def dashboard(args):
+    """Sub command for dashboard"""
+    webbrowser.open('https://monitoring.platform360.io/')
+
 # --- servers functions ---
 
 def servers_add(args):
@@ -121,6 +128,12 @@ def servers_update(args):
 def servers(args):
     """Sub command for servers"""
     cli_subcommands[args.subparser].print_help()
+
+# --- signup functions ---
+
+def signup(args):
+    """Sub command for signup"""
+    webbrowser.open('https://360monitoring.com/monitoring-trial/')
 
 # --- sites functions ---
 
@@ -235,6 +248,11 @@ def performCLI():
     cli_contacts_remove.add_argument('--email', nargs='?', default='', metavar='email', help='remove contact with given email address')
     cli_contacts_remove.add_argument('--phone', nargs='?', default='', metavar='phone', help='remove contact with given phone number')
 
+    # dashboard
+
+    cli_dashboard = subparsers.add_parser('dashboard', help='open 360 Monitoring Dashboard in your Web Browser')
+    cli_dashboard.set_defaults(func=dashboard)
+
     # servers
 
     cli_servers = subparsers.add_parser('servers', help='list and manage monitored servers')
@@ -265,6 +283,11 @@ def performCLI():
     cli_servers_update.add_argument('--id', nargs='?', default='', metavar='id', help='update server with given ID')
     cli_servers_update.add_argument('--name', nargs='?', default='', metavar='name', help='update server with given name')
     cli_servers_update.add_argument('--tag', nargs='*', default='', metavar='tag', help='set these tags for one or more servers specified')
+
+    # signup
+
+    cli_signup = subparsers.add_parser('signup', help='sign up for 360 Monitoring')
+    cli_signup.set_defaults(func=signup)
 
     # sites
 
@@ -332,7 +355,9 @@ def performCLI():
 
     cli_subcommands['config'] = cli_config
     cli_subcommands['contacts'] = cli_contacts
+    cli_subcommands['dashboard'] = cli_dashboard
     cli_subcommands['servers'] = cli_servers
+    cli_subcommands['signup'] = cli_signup
     cli_subcommands['sites'] = cli_sites
     cli_subcommands['statistics'] = cli_statistics
     cli_subcommands['usertokens'] = cli_usertokens
@@ -342,7 +367,7 @@ def performCLI():
         if args.version:
             print('360 Monitoring CLI Version:', __version__)
         elif 'func' in args:
-            # statistics is shown directly without subparser
+            # statistics, signup and dashboard is shown directly without subparser
             if args.func == config:
                 cli_config.print_help()
             elif args.func == contacts:

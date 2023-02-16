@@ -35,7 +35,7 @@ You can easily test and run 360 Monitoring CLI for production by running the pre
 
     $ docker run -it --rm ubuntu /bin/bash
     $ apt-get update && apt-get install -y python3 && apt-get install -y pip
-    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.9"
+    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.10"
 
 ### For developement, install required Python modules
 
@@ -59,7 +59,8 @@ Test the deployed CLI package:
 ## Usage
 
     $ 360monitoring --help                        display general help
-    $ 360monitoring config save --api-key KEY     configure API KEY to connect to 360 Monitoring account
+    $ 360monitoring signup                        open the sign up page to get your 360 Monitoring account
+    $ 360monitoring config save --api-key KEY     configure API KEY to connect to 360 Monitoring account (only for paid plans)
     $ 360monitoring statistics                    display all assets of your account
     $ 360monitoring servers list                  display all monitored servers
     $ 360monitoring servers list --issues         display monitored servers with issues only
@@ -74,3 +75,4 @@ Test the deployed CLI package:
     $ 360monitoring servers update --name cpanel123.hoster.com --tag production   tag a specific server
 
     $ 360monitoring contacts --help               display specific help for a sub command
+    $ 360monitoring dashboard                     open 360 Monitoring in your Web Browser
