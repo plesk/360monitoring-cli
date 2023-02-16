@@ -39,13 +39,14 @@ You can easily test and run 360 Monitoring CLI for production by running the pre
 
 ### For developement, install required Python modules
 
- * To test the code locally, install the Python modules "requests", "configparser", "argparse" and "prettytable"
- * Create an alias for "360monitoring=./monitoring.py"
+ To test the code locally, install the Python modules "requests", "configparser", "argparse" and "prettytable".
+ Create an alias for "360monitoring=./monitoring.py".
 
     $ pip install requests
     $ pip install configparser
     $ pip install argparse
     $ pip install prettytable
+    $ alias 360monitoring="./monitoring.py"
 
 #### Run tests to check each function works
 
