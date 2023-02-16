@@ -76,3 +76,8 @@ Test the deployed CLI package:
 
     $ 360monitoring contacts --help               display specific help for a sub command
     $ 360monitoring dashboard                     open 360 Monitoring in your Web Browser
+
+## Updating 360 Monitoring CLI package
+You can update the 360monitoringcli package to the latest version using the following command:
+
+    $ pip install 360monitoringcli --upgrade
