@@ -19,6 +19,7 @@ class Sites(object):
         self.table.field_names = ['ID', 'URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location']
         self.table.align['ID'] = 'l'
         self.table.align['URL'] = 'l'
+        self.table.min_width['URL'] = 25
         self.table.align['Status'] = 'l'
         self.table.align['Uptime %'] = 'r'
         self.table.align['Time to first Byte'] = 'c'
@@ -55,26 +56,36 @@ class Sites(object):
             self.monitors = None
             return False
 
-    def list(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = '', issuesOnly: bool = False):
+    def list(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = '', issuesOnly: bool = False, sort: str = '', reverse: bool = False, limit: int = 0):
         """Iterate through list of web monitors and print details"""
 
         if self.fetchData():
+
+            # if JSON was requested and no filters, then just print it without iterating through
+            if (self.format == 'json' and not (id or url or name or location or pattern or issuesOnly or limit > 0)):
+                print(json.dumps(self.monitors, indent=4))
+                return
+
             self.printHeader()
 
+            n = 0
             for monitor in self.monitors:
-                if (id or url or name or location or pattern):
-                    if (id and monitor['id'] == id) \
-                        or (url and monitor['url'] == url) \
-                        or (name and 'name' in monitor and monitor['name'] == name) \
-                        or (location and location in monitor['monitor']['name']) \
-                        or (pattern and pattern in monitor['url']):
+                if limit == 0 or n < limit:
+                    if (id or url or name or location or pattern):
+                        if (id and monitor['id'] == id) \
+                            or (url and monitor['url'] == url) \
+                            or (name and 'name' in monitor and monitor['name'] == name) \
+                            or (location and location in monitor['monitor']['name']) \
+                            or (pattern and pattern in monitor['url']):
+                            if (not issuesOnly) or self.hasIssue(monitor):
+                                self.print(monitor)
+                                n += 1
+                    else:
                         if (not issuesOnly) or self.hasIssue(monitor):
                             self.print(monitor)
-                else:
-                    if (not issuesOnly) or self.hasIssue(monitor):
-                        self.print(monitor)
+                            n += 1
 
-            self.printFooter()
+            self.printFooter(sort, reverse)
 
     def add(self, url: str, protocol: str = 'https', name: str = '', force: bool = False):
         """Add a monitor for the given URL"""
@@ -191,7 +202,7 @@ class Sites(object):
         self.sum_ttfb = 0
         self.num_monitors = 0
 
-    def printFooter(self):
+    def printFooter(self, sort: str = '', reverse: bool = False):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
@@ -212,6 +223,7 @@ class Sites(object):
             # add average row as table footer
             self.table.add_row(['', 'Average of ' + str(self.num_monitors) + ' monitors', '', uptime_percentage_text, ttfb_text, ''])
 
+            # remove columns that should be excluded
             if self.config.hide_ids:
                 self.table.del_column('ID')
 
@@ -221,13 +233,28 @@ class Sites(object):
             # Use the first line (+---+-- ...) as horizontal rule to insert later
             horizontal_line = list_of_table_lines[0]
 
-            # Print the table
-            # Treat the last n lines as "result lines" that are seperated from the
-            # rest of the table by the horizontal line
-            result_lines = 1
-            print("\n".join(list_of_table_lines[:-(result_lines + 1)]))
-            print(horizontal_line)
-            print("\n".join(list_of_table_lines[-(result_lines + 1):]))
+            if sort:
+                # remember summary row
+                summary_line = list_of_table_lines[-2]
+
+                # remove summary row again to allow sorting
+                self.table.del_row(len(self.table.rows)-1)
+                #print table.get_string(sortby=("Grade","Name"), reversesort=True)
+                list_of_table_lines = self.table.get_string(sortby=sort, reversesort=reverse).split('\n')
+
+                # Print the table
+                print('\n'.join(list_of_table_lines))
+                print(summary_line)
+                print(horizontal_line)
+            else:
+                # Print the table
+                # Treat the last n lines as "result lines" that are seperated from the
+                # rest of the table by the horizontal line
+                print('\n'.join(list_of_table_lines[:-2]))
+                print(horizontal_line)
+                print('\n'.join(list_of_table_lines[-2:]))
+
+        #self.table.get_csv_string()
 
     def print(self, monitor):
         """Print the data of the specified web monitor"""

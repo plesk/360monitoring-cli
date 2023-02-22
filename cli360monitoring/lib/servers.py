@@ -14,10 +14,12 @@ class Servers(object):
         self.config = config
         self.servers = None
         self.format = 'table'
+
         self.table = PrettyTable()
         self.table.field_names = ['ID', 'Server name', 'IP Address', 'Status', 'OS', 'CPU Usage %', 'Mem Usage %', 'Disk Usage %', 'Disk Info', 'Tags']
         self.table.align['ID'] = 'l'
         self.table.align['Server name'] = 'l'
+        self.table.min_width['Server name'] = 24
         self.table.align['Tags'] = 'l'
 
         self.sum_cpu_usage = 0
@@ -76,28 +78,38 @@ class Servers(object):
             printError('Failed to update server', serverId, 'with response code:', response.status_code)
             return False
 
-    def list(self, issuesOnly: bool, tags):
+    def list(self, issuesOnly: bool, sort: str, reverse: bool, limit: int, tags):
         """Iterate through list of server monitors and print details"""
 
         if self.fetchData():
+
+            # if JSON was requested and no filters, then just print it without iterating through
+            if (self.format == 'json' and not (issuesOnly or len(tags) > 0 or limit > 0)):
+                print(json.dumps(self.servers, indent=4))
+                return
+
             self.printHeader()
 
+            n = 0
             # Iterate through list of monitors and print urls, etc.
             for server in self.servers:
-                if len(tags) == 0:
-                    if (not issuesOnly) or self.hasIssue(server):
-                        self.print(server)
-                elif 'tags' in server:
-                    match = True
-                    for tag in tags:
-                        if not tag in server['tags']:
-                            match = False
-                            break
-                    if match:
+                if limit == 0 or n < limit:
+                    if len(tags) == 0:
                         if (not issuesOnly) or self.hasIssue(server):
                             self.print(server)
+                            n += 1
+                    elif 'tags' in server:
+                        match = True
+                        for tag in tags:
+                            if not tag in server['tags']:
+                                match = False
+                                break
+                        if match:
+                            if (not issuesOnly) or self.hasIssue(server):
+                                self.print(server)
+                                n += 1
 
-            self.printFooter()
+            self.printFooter(sort, reverse)
 
     def setTags(self, pattern: str, tags):
         """Set the tags for the server specified with pattern. Pattern can be either the server ID or its name"""
@@ -145,7 +157,7 @@ class Servers(object):
         self.sum_disk_usage = 0
         self.num_servers = 0
 
-    def printFooter(self):
+    def printFooter(self, sort: str = '', reverse: bool = False):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
@@ -181,13 +193,25 @@ class Servers(object):
             # Use the first line (+---+-- ...) as horizontal rule to insert later
             horizontal_line = list_of_table_lines[0]
 
-            # Print the table
-            # Treat the last n lines as "result lines" that are seperated from the
-            # rest of the table by the horizontal line
-            result_lines = 1
-            print("\n".join(list_of_table_lines[:-(result_lines + 1)]))
-            print(horizontal_line)
-            print("\n".join(list_of_table_lines[-(result_lines + 1):]))
+            if sort:
+                # remember summary row
+                summary_line = list_of_table_lines[-2]
+
+                # remove summary row again to allow sorting
+                self.table.del_row(len(self.table.rows)-1)
+                list_of_table_lines = self.table.get_string(sortby=sort, reversesort=reverse).split('\n')
+
+                # Print the table
+                print('\n'.join(list_of_table_lines))
+                print(summary_line)
+                print(horizontal_line)
+            else:
+                # Print the table
+                # Treat the last n lines as "result lines" that are seperated from the
+                # rest of the table by the horizontal line
+                print('\n'.join(list_of_table_lines[:-2]))
+                print(horizontal_line)
+                print('\n'.join(list_of_table_lines[-2:]))
 
     def print(self, server):
         """Print the data of the specified server monitor"""

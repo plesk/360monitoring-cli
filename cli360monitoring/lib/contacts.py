@@ -13,6 +13,7 @@ class Contacts(object):
         self.config = config
         self.contacts = None
         self.format = 'table'
+
         self.table = PrettyTable()
         self.table.field_names = ['ID', 'Name', 'Email', 'Phone', 'Method']
         self.table.align['ID'] = 'l'
@@ -48,23 +49,33 @@ class Contacts(object):
             self.contacts = None
             return False
 
-    def list(self, id: str = '', name: str = '', email: str = '', phone: str = ''):
+    def list(self, id: str = '', name: str = '', email: str = '', phone: str = '', sort: str = '', reverse: bool = False, limit: int = 0):
         """Iterate through list of contacts and print details"""
 
         if self.fetchData():
+
+            # if JSON was requested and no filters, then just print it without iterating through
+            if (self.format == 'json' and not (id or name or email or phone or limit > 0)):
+                print(json.dumps(self.contacts, indent=4))
+                return
+
             self.printHeader()
 
+            n = 0
             for contact in self.contacts:
-                if (id or name or email or phone):
-                    if (id and 'id' in contact and contact['id'] == id) \
-                        or (name and 'name' in contact and contact['name'] == name) \
-                        or (email and 'email' in contact and contact['email'] == email) \
-                        or (phone and 'phonenumber' in contact and contact['phonenumber'] == phone):
+                if limit == 0 or n < limit:
+                    if (id or name or email or phone):
+                        if (id and 'id' in contact and contact['id'] == id) \
+                            or (name and 'name' in contact and contact['name'] == name) \
+                            or (email and 'email' in contact and contact['email'] == email) \
+                            or (phone and 'phonenumber' in contact and contact['phonenumber'] == phone):
+                            self.print(contact)
+                            n += 1
+                    else:
                         self.print(contact)
-                else:
-                    self.print(contact)
+                        n += 1
 
-            self.printFooter()
+            self.printFooter(sort, reverse)
 
     def add(self, name: str, email: str = '', sms: str = ''):
         """Add a contact for the given name"""
@@ -143,11 +154,17 @@ class Contacts(object):
         if (self.format == 'csv'):
             print('id;name;email;phone;method')
 
-    def printFooter(self):
+    def printFooter(self, sort: str = '', reverse: bool = False):
         """Print table if table format requested"""
         if (self.format == 'table'):
+
             if self.config.hide_ids:
                 self.table.del_column('ID')
+
+            if sort:
+                self.table.sortby = sort
+                self.table.reversesort = reverse
+
             print(self.table)
 
     def print(self, contact):

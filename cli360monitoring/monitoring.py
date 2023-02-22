@@ -13,7 +13,7 @@ from .lib.sites import Sites
 from .lib.usertokens import UserTokens
 from .lib.statistics import Statistics
 
-__version__ = '1.0.10'
+__version__ = '1.0.11'
 
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
@@ -68,7 +68,7 @@ def contacts_list(args):
     check_columns(args.columns)
     contacts = Contacts(cfg)
     contacts.format = args.output
-    contacts.list(id=args.id, name=args.name, email=args.email, phone=args.phone)
+    contacts.list(id=args.id, name=args.name, email=args.email, phone=args.phone, sort=args.sort, reverse=args.reverse, limit=args.limit)
 
 def contacts_remove(args):
     """Sub command for contacts remove"""
@@ -108,7 +108,7 @@ def servers_list(args):
     check_columns(args.columns)
     servers = Servers(cfg)
     servers.format = args.output
-    servers.list(args.issues, args.tag)
+    servers.list(args.issues, args.sort, args.reverse, args.limit, args.tag)
 
 def servers_remove(args):
     """Sub command for servers remove"""
@@ -159,7 +159,7 @@ def sites_list(args):
     check_columns(args.columns)
     sites = Sites(cfg)
     sites.format = args.output
-    sites.list(id=args.id, url=args.url, name=args.name, location=args.location, pattern=args.pattern, issuesOnly=args.issues)
+    sites.list(id=args.id, url=args.url, name=args.name, location=args.location, pattern=args.pattern, issuesOnly=args.issues, sort=args.sort, reverse=args.reverse, limit=args.limit)
 
 def sites_remove(args):
     """Sub command for sites remove"""
@@ -235,11 +235,15 @@ def performCLI():
     cli_contacts_list.add_argument('--email', nargs='?', default='', metavar='email', help='list contact with given email address')
     cli_contacts_list.add_argument('--phone', nargs='?', default='', metavar='phone', help='list contact with given phone number')
 
+    cli_contacts_list.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_contacts_list.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_contacts_list.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_contacts_list.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
     cli_contacts_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
     cli_contacts_list.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
     cli_contacts_list.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
     cli_contacts_list.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
-    cli_contacts_list.add_argument('--columns', nargs='*', default='', metavar='columns', help='Specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
 
     cli_contacts_remove = cli_contacts_subparsers.add_parser('remove', help='remove a contact')
     cli_contacts_remove.set_defaults(func=contacts_remove)
@@ -269,11 +273,15 @@ def performCLI():
     cli_servers_list.add_argument('--tag', nargs='*', default='', metavar='tag', help='only list servers matching these tags')
     cli_servers_list.add_argument('--issues', action='store_true', help='show only servers with issues')
 
+    cli_servers_list.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_servers_list.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_servers_list.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_servers_list.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
     cli_servers_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
     cli_servers_list.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
     cli_servers_list.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
     cli_servers_list.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
-    cli_servers_list.add_argument('--columns', nargs='*', default='', metavar='columns', help='Specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
 
     cli_servers_remove = cli_servers_subparsers.add_parser('remove', help='remove monitoring for a server')
     cli_servers_remove.set_defaults(func=servers_remove)
@@ -313,11 +321,15 @@ def performCLI():
     cli_sites_list.add_argument('--pattern', nargs='?', default='', metavar='pattern', help='list sites with pattern included in URL')
     cli_sites_list.add_argument('--issues', action='store_true', help='show only sites with issues')
 
+    cli_sites_list.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_sites_list.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_sites_list.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_sites_list.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
     cli_sites_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
     cli_sites_list.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
     cli_sites_list.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
     cli_sites_list.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
-    cli_sites_list.add_argument('--columns', nargs='*', default='', metavar='columns', help='Specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
 
     cli_sites_remove = cli_sites_subparsers.add_parser('remove', help='remove a contact')
     cli_sites_remove.set_defaults(func=sites_remove)
