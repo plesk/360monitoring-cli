@@ -68,24 +68,24 @@ class Sites(object):
 
             self.printHeader()
 
-            n = 0
+            self.sum_uptime = 0
+            self.sum_ttfb = 0
+            self.num_monitors = 0
+
             for monitor in self.monitors:
-                if limit == 0 or n < limit:
-                    if (id or url or name or location or pattern):
-                        if (id and monitor['id'] == id) \
-                            or (url and monitor['url'] == url) \
-                            or (name and 'name' in monitor and monitor['name'] == name) \
-                            or (location and location in monitor['monitor']['name']) \
-                            or (pattern and pattern in monitor['url']):
-                            if (not issuesOnly) or self.hasIssue(monitor):
-                                self.print(monitor)
-                                n += 1
-                    else:
+                if (id or url or name or location or pattern):
+                    if (id and monitor['id'] == id) \
+                        or (url and monitor['url'] == url) \
+                        or (name and 'name' in monitor and monitor['name'] == name) \
+                        or (location and location in monitor['monitor']['name']) \
+                        or (pattern and pattern in monitor['url']):
                         if (not issuesOnly) or self.hasIssue(monitor):
                             self.print(monitor)
-                            n += 1
+                else:
+                    if (not issuesOnly) or self.hasIssue(monitor):
+                        self.print(monitor)
 
-            self.printFooter(sort, reverse)
+            self.printFooter(sort=sort, reverse=reverse, limit=limit)
 
     def add(self, url: str, protocol: str = 'https', name: str = '', force: bool = False):
         """Add a monitor for the given URL"""
@@ -194,15 +194,10 @@ class Sites(object):
 
     def printHeader(self):
         """Print CSV header if CSV format requested"""
-
         if (self.format == 'csv'):
             print('id;url;name;code;status;status_message;uptime_percentage;ttfb;location')
 
-        self.sum_uptime = 0
-        self.sum_ttfb = 0
-        self.num_monitors = 0
-
-    def printFooter(self, sort: str = '', reverse: bool = False):
+    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0, delimiter: str = ';'):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
@@ -230,31 +225,34 @@ class Sites(object):
             # Get string to be printed and create list of elements separated by \n
             list_of_table_lines = self.table.get_string().split('\n')
 
-            # Use the first line (+---+-- ...) as horizontal rule to insert later
-            horizontal_line = list_of_table_lines[0]
+            # remember summary row
+            summary_line = list_of_table_lines[-2]
+
+            # remove summary row again to allow sorting and limiting
+            self.table.del_row(len(self.table.rows)-1)
 
             if sort:
-                # remember summary row
-                summary_line = list_of_table_lines[-2]
+                # if sort contains the column index instead of the column name, get the column name instead
+                if sort.isdecimal():
+                    sort = self.table.get_csv_string().split(',')[int(sort) - 1]
+            else:
+                sort = None
 
-                # remove summary row again to allow sorting
-                self.table.del_row(len(self.table.rows)-1)
-                #print table.get_string(sortby=("Grade","Name"), reversesort=True)
+            if limit > 0:
+                list_of_table_lines = self.table.get_string(sortby=sort, reversesort=reverse, start=0, end=limit).split('\n')
+            else:
                 list_of_table_lines = self.table.get_string(sortby=sort, reversesort=reverse).split('\n')
 
-                # Print the table
-                print('\n'.join(list_of_table_lines))
-                print(summary_line)
-                print(horizontal_line)
-            else:
-                # Print the table
-                # Treat the last n lines as "result lines" that are seperated from the
-                # rest of the table by the horizontal line
-                print('\n'.join(list_of_table_lines[:-2]))
-                print(horizontal_line)
-                print('\n'.join(list_of_table_lines[-2:]))
+            # Sorting by multiple columns could be done like this
+            # list_of_table_lines = self.table.get_string(sortby=("Col Name 1", "Col Name 2")), reversesort=reverse).split('\n')
 
-        #self.table.get_csv_string()
+            # Print the table
+            print('\n'.join(list_of_table_lines))
+            print(summary_line)
+            print(list_of_table_lines[0])
+
+        # elif (self.format == 'csv'):
+        #    print(self.table.get_csv_string(delimiter=delimiter))
 
     def print(self, monitor):
         """Print the data of the specified web monitor"""
@@ -281,6 +279,7 @@ class Sites(object):
             ttfb = -1
 
         if (self.format == 'csv'):
+            #self.table.add_row([id, url, status_message, uptime_percentage, ttfb, location])
             print(f"{id};{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
         else:
             if uptime_percentage <= float(self.config.threshold_uptime):

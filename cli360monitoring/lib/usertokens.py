@@ -12,7 +12,7 @@ class UserTokens(object):
     def __init__(self, config):
         self.config = config
         self.usertokens = None
-        self.format = 'table'
+
         self.table = PrettyTable()
         self.table.field_names = ['Token']
 
@@ -48,13 +48,17 @@ class UserTokens(object):
             self.usertokens = None
             return False
 
-    def list(self, token: str = ''):
+    def list(self, token: str = '', format: str = 'table', delimiter: str = ';'):
         """Iterate through list of usertokens and print details"""
 
         if self.fetchData():
-            self.printHeader()
-
             if self.usertokens != None:
+
+                # if JSON was requested and no filters, then just print it without iterating through
+                if (format == 'json' and not token):
+                    print(json.dumps(self.usertokens, indent=4))
+                    return
+
                 for usertoken in self.usertokens:
                     if token:
                         if usertoken['token'] == token:
@@ -63,7 +67,10 @@ class UserTokens(object):
                     else:
                         self.print(usertoken)
 
-            self.printFooter()
+            if (format == 'table'):
+                print(self.table)
+            elif (format == 'csv'):
+                print(self.table.get_csv_string(delimiter=delimiter))
 
     def token(self):
         """Print the data of first usertoken"""
@@ -94,26 +101,11 @@ class UserTokens(object):
             printError('Failed to create usertoken with response code:', response.status_code)
             return False
 
-    def printHeader(self):
-        """Print CSV header if CSV format requested"""
-        if (self.format == 'csv'):
-            print('token')
-
-    def printFooter(self):
-        """Print table if table format requested"""
-        if (self.format == 'table'):
-            print(self.table)
-
-    def print(self, usertoken):
+    def print(self, usertoken, format: str = 'table'):
         """Print the data of the specified usertoken"""
 
-        if (self.format == 'json'):
+        if (format == 'json'):
             print(json.dumps(usertoken, indent=4))
-            return
-
-        token = usertoken['token']
-
-        if (self.format == 'csv'):
-            print(f"{token}")
         else:
+            token = usertoken['token']
             self.table.add_row([token])

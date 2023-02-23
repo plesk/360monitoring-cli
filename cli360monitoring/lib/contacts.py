@@ -49,7 +49,7 @@ class Contacts(object):
             self.contacts = None
             return False
 
-    def list(self, id: str = '', name: str = '', email: str = '', phone: str = '', sort: str = '', reverse: bool = False, limit: int = 0):
+    def list(self, id: str = '', name: str = '', email: str = '', phone: str = '', sort: str = '', reverse: bool = False, limit: int = 0, delimiter: str = ';'):
         """Iterate through list of contacts and print details"""
 
         if self.fetchData():
@@ -59,23 +59,17 @@ class Contacts(object):
                 print(json.dumps(self.contacts, indent=4))
                 return
 
-            self.printHeader()
-
-            n = 0
             for contact in self.contacts:
-                if limit == 0 or n < limit:
-                    if (id or name or email or phone):
-                        if (id and 'id' in contact and contact['id'] == id) \
-                            or (name and 'name' in contact and contact['name'] == name) \
-                            or (email and 'email' in contact and contact['email'] == email) \
-                            or (phone and 'phonenumber' in contact and contact['phonenumber'] == phone):
-                            self.print(contact)
-                            n += 1
-                    else:
+                if (id or name or email or phone):
+                    if (id and 'id' in contact and contact['id'] == id) \
+                        or (name and 'name' in contact and contact['name'] == name) \
+                        or (email and 'email' in contact and contact['email'] == email) \
+                        or (phone and 'phonenumber' in contact and contact['phonenumber'] == phone):
                         self.print(contact)
-                        n += 1
+                else:
+                    self.print(contact)
 
-            self.printFooter(sort, reverse)
+            self.printFooter(sort=sort, reverse=reverse, limit=limit, delimiter=delimiter)
 
     def add(self, name: str, email: str = '', sms: str = ''):
         """Add a contact for the given name"""
@@ -149,23 +143,28 @@ class Contacts(object):
 
         printWarn('No contact with given pattern found: id=' + id, 'name=' + name, 'email=' + email, 'phone=' + phone)
 
-    def printHeader(self):
-        """Print CSV header if CSV format requested"""
-        if (self.format == 'csv'):
-            print('id;name;email;phone;method')
-
-    def printFooter(self, sort: str = '', reverse: bool = False):
+    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0, delimiter: str = ';'):
         """Print table if table format requested"""
+
         if (self.format == 'table'):
 
             if self.config.hide_ids:
                 self.table.del_column('ID')
 
             if sort:
-                self.table.sortby = sort
-                self.table.reversesort = reverse
+                # if sort contains the column index instead of the column name, get the column name instead
+                if sort.isdecimal():
+                    sort = self.table.get_csv_string().split(',')[int(sort) - 1]
+            else:
+                sort = None
 
-            print(self.table)
+            if limit > 0:
+                print(self.table.get_string(sortby=sort, reversesort=reverse, start=0, end=limit))
+            else:
+                print(self.table.get_string(sortby=sort, reversesort=reverse))
+
+        elif (self.format == 'csv'):
+            print(self.table.get_csv_string(delimiter=delimiter))
 
     def print(self, contact):
         """Print the data of the specified contact"""
@@ -180,7 +179,4 @@ class Contacts(object):
         phone = contact['phonenumber'] if 'phonenumber' in contact else ''
         method = contact['method'] if 'method' in contact else ''
 
-        if (self.format == 'csv'):
-            print(f"{id};{name};{email};{phone};{method}")
-        else:
-            self.table.add_row([id, name, email, phone, method])
+        self.table.add_row([id, name, email, phone, method])

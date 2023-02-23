@@ -13,7 +13,7 @@ from .lib.sites import Sites
 from .lib.usertokens import UserTokens
 from .lib.statistics import Statistics
 
-__version__ = '1.0.11'
+__version__ = '1.0.12'
 
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
@@ -175,8 +175,7 @@ def sites(args):
 def statistics(args):
     """Sub command for statistics"""
     statistics = Statistics(cfg)
-    statistics.format = args.output
-    statistics.print()
+    statistics.print(format=args.output)
 
 # --- usertokens functions ---
 
@@ -188,8 +187,7 @@ def usertokens_create(args):
 def usertokens_list(args):
     """Sub command for usertokens list"""
     usertokens = UserTokens(cfg)
-    usertokens.format = args.output
-    usertokens.list()
+    usertokens.list(format=args.output)
 
 def usertokens(args):
     """Sub command for usertokens"""

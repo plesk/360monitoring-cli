@@ -17,17 +17,14 @@ class Statistics(object):
     def __init__(self, config):
         self.config = config
         self.statistics = None
-        self.format = 'table'
 
         self.table = PrettyTable()
         self.table.field_names = ['Value', 'Metric']
         self.table.align['Value'] = 'r'
         self.table.align['Metric'] = 'l'
 
-    def print(self):
+    def print(self, format: str = 'table', delimiter: str = ';'):
         """Iterate through all assets and print statistics"""
-
-        self.printHeader()
 
         servers = Servers(self.config)
         if servers.fetchData():
@@ -35,7 +32,7 @@ class Statistics(object):
             sum_mem_usage = 0
             sum_disk_usage = 0
             num_servers = len(servers.servers)
-            self.printAsset('Servers', len(servers.servers))
+            self.table.add_row([len(servers.servers), 'Servers'])
 
             for server in servers.servers:
                 sum_cpu_usage = sum_cpu_usage + server['summary']['cpu_usage_percent'] if 'summary' in server else 0
@@ -61,16 +58,16 @@ class Statistics(object):
             else:
                avg_disk_usage_text = "{:.1f}".format(avg_disk_usage)
 
-            self.printAsset('% avg cpu usage of all ' + str(num_servers) + ' servers', avg_cpu_usage_text)
-            self.printAsset('% avg mem usage of all ' + str(num_servers) + ' servers', avg_mem_usage_text)
-            self.printAsset('% avg disk usage of all ' + str(num_servers) + ' servers', avg_disk_usage_text)
+            self.table.add_row([avg_cpu_usage_text, '% avg cpu usage of all ' + str(num_servers) + ' servers'])
+            self.table.add_row([avg_mem_usage_text, '% avg mem usage of all ' + str(num_servers) + ' servers'])
+            self.table.add_row([avg_disk_usage_text, '% avg disk usage of all ' + str(num_servers) + ' servers'])
 
         sites = Sites(self.config)
         if sites.fetchData():
             sum_uptime = 0
             sum_ttfb = 0
             num_monitors = len(sites.monitors)
-            self.printAsset('Sites', len(sites.monitors))
+            self.table.add_row([len(sites.monitors), 'Sites'])
 
             for monitor in sites.monitors:
                 uptime_percentage = float(monitor['uptime_percentage'])
@@ -93,35 +90,18 @@ class Statistics(object):
             else:
                 ttfb_text = "{:.2f}".format(avg_ttfb)
 
-            self.printAsset('% avg uptime of all ' + str(num_monitors) + ' sites', uptime_percentage_text)
-            self.printAsset('sec avg ttfb of all ' + str(num_monitors) + ' sites', ttfb_text)
+            self.table.add_row([uptime_percentage_text, '% avg uptime of all ' + str(num_monitors) + ' sites'])
+            self.table.add_row([ttfb_text, 'sec avg ttfb of all ' + str(num_monitors) + ' sites'])
 
         contacts = Contacts(self.config)
         if contacts.fetchData():
-            self.printAsset('Contacts', len(contacts.contacts))
+            self.table.add_row([len(contacts.contacts), 'Contacts'])
 
         usertokens = UserTokens(self.config)
         if usertokens.fetchData():
-            self.printAsset('User Tokens', len(usertokens.usertokens))
+            self.table.add_row([len(usertokens.usertokens), 'User Tokens'])
 
-        self.printFooter()
-
-    def printHeader(self):
-        """Print CSV header if CSV format requested"""
-
-        if (self.format == 'csv'):
-            print('metric;value')
-
-    def printFooter(self):
-        """Print table if table format requested"""
-
-        if (self.format == 'table'):
+        if (format == 'table'):
             print(self.table)
-
-    def printAsset(self, asset: str, value):
-        """Print the data of the specified web monitor"""
-
-        if (self.format == 'csv'):
-            print(f"{asset};{value}")
-        else:
-            self.table.add_row([value, asset])
+        elif (format == 'csv'):
+            print(self.table.get_csv_string(delimiter=delimiter))

@@ -90,26 +90,27 @@ class Servers(object):
 
             self.printHeader()
 
-            n = 0
+            self.sum_cpu_usage = 0
+            self.sum_mem_usage = 0
+            self.sum_disk_usage = 0
+            self.num_servers = 0
+
             # Iterate through list of monitors and print urls, etc.
             for server in self.servers:
-                if limit == 0 or n < limit:
-                    if len(tags) == 0:
+                if len(tags) == 0:
+                    if (not issuesOnly) or self.hasIssue(server):
+                        self.print(server)
+                elif 'tags' in server:
+                    match = True
+                    for tag in tags:
+                        if not tag in server['tags']:
+                            match = False
+                            break
+                    if match:
                         if (not issuesOnly) or self.hasIssue(server):
                             self.print(server)
-                            n += 1
-                    elif 'tags' in server:
-                        match = True
-                        for tag in tags:
-                            if not tag in server['tags']:
-                                match = False
-                                break
-                        if match:
-                            if (not issuesOnly) or self.hasIssue(server):
-                                self.print(server)
-                                n += 1
 
-            self.printFooter(sort, reverse)
+            self.printFooter(sort=sort, reverse=reverse, limit=limit)
 
     def setTags(self, pattern: str, tags):
         """Set the tags for the server specified with pattern. Pattern can be either the server ID or its name"""
@@ -148,16 +149,10 @@ class Servers(object):
 
     def printHeader(self):
         """Print CSV if CSV format requested"""
-
         if (self.format == 'csv'):
             print('id;server name;ip address;status;os;cpu usage %;mem usage %;disk usage %;free disk space;tags')
 
-        self.sum_cpu_usage = 0
-        self.sum_mem_usage = 0
-        self.sum_disk_usage = 0
-        self.num_servers = 0
-
-    def printFooter(self, sort: str = '', reverse: bool = False):
+    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
@@ -190,28 +185,31 @@ class Servers(object):
             # Get string to be printed and create list of elements separated by \n
             list_of_table_lines = self.table.get_string().split('\n')
 
-            # Use the first line (+---+-- ...) as horizontal rule to insert later
-            horizontal_line = list_of_table_lines[0]
+            # remember summary row
+            summary_line = list_of_table_lines[-2]
+
+            # remove summary row again to allow sorting and limiting
+            self.table.del_row(len(self.table.rows)-1)
 
             if sort:
-                # remember summary row
-                summary_line = list_of_table_lines[-2]
+                # if sort contains the column index instead of the column name, get the column name instead
+                if sort.isdecimal():
+                    sort = self.table.get_csv_string().split(',')[int(sort) - 1]
+            else:
+                sort = None
 
-                # remove summary row again to allow sorting
-                self.table.del_row(len(self.table.rows)-1)
+            if limit > 0:
+                list_of_table_lines = self.table.get_string(sortby=sort, reversesort=reverse, start=0, end=limit).split('\n')
+            else:
                 list_of_table_lines = self.table.get_string(sortby=sort, reversesort=reverse).split('\n')
 
-                # Print the table
-                print('\n'.join(list_of_table_lines))
-                print(summary_line)
-                print(horizontal_line)
-            else:
-                # Print the table
-                # Treat the last n lines as "result lines" that are seperated from the
-                # rest of the table by the horizontal line
-                print('\n'.join(list_of_table_lines[:-2]))
-                print(horizontal_line)
-                print('\n'.join(list_of_table_lines[-2:]))
+            # Sorting by multiple columns could be done like this
+            # list_of_table_lines = self.table.get_string(sortby=("Col Name 1", "Col Name 2")), reversesort=reverse).split('\n')
+
+            # Print the table
+            print('\n'.join(list_of_table_lines))
+            print(summary_line)
+            print(list_of_table_lines[0])
 
     def print(self, server):
         """Print the data of the specified server monitor"""
