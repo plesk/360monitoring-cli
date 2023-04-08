@@ -49,7 +49,7 @@ class Contacts(object):
             self.contacts = None
             return False
 
-    def list(self, id: str = '', name: str = '', email: str = '', phone: str = '', sort: str = '', reverse: bool = False, limit: int = 0, delimiter: str = ';'):
+    def list(self, id: str = '', name: str = '', email: str = '', phone: str = '', sort: str = '', reverse: bool = False, limit: int = 0):
         """Iterate through list of contacts and print details"""
 
         if self.fetchData():
@@ -69,7 +69,7 @@ class Contacts(object):
                 else:
                     self.print(contact)
 
-            self.printFooter(sort=sort, reverse=reverse, limit=limit, delimiter=delimiter)
+            self.printFooter(sort=sort, reverse=reverse, limit=limit)
 
     def add(self, name: str, email: str = '', sms: str = ''):
         """Add a contact for the given name"""
@@ -143,7 +143,7 @@ class Contacts(object):
 
         printWarn('No contact with given pattern found: id=' + id, 'name=' + name, 'email=' + email, 'phone=' + phone)
 
-    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0, delimiter: str = ';'):
+    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
@@ -164,7 +164,7 @@ class Contacts(object):
                 print(self.table.get_string(sortby=sort, reversesort=reverse))
 
         elif (self.format == 'csv'):
-            print(self.table.get_csv_string(delimiter=delimiter))
+            print(self.table.get_csv_string(delimiter=self.config.delimiter))
 
     def print(self, contact):
         """Print the data of the specified contact"""

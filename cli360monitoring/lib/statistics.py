@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import requests
-import json
 from prettytable import PrettyTable
 
 from .config import Config
@@ -16,14 +14,13 @@ class Statistics(object):
 
     def __init__(self, config):
         self.config = config
-        self.statistics = None
 
         self.table = PrettyTable()
         self.table.field_names = ['Value', 'Metric']
         self.table.align['Value'] = 'r'
         self.table.align['Metric'] = 'l'
 
-    def print(self, format: str = 'table', delimiter: str = ';'):
+    def print(self, format: str = 'table'):
         """Iterate through all assets and print statistics"""
 
         servers = Servers(self.config)
@@ -104,4 +101,4 @@ class Statistics(object):
         if (format == 'table'):
             print(self.table)
         elif (format == 'csv'):
-            print(self.table.get_csv_string(delimiter=delimiter))
+            print(self.table.get_csv_string(delimiter=self.config.delimiter))

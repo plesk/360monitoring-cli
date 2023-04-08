@@ -6,14 +6,17 @@ import json
 import webbrowser
 
 # suprisingly this works in PyPi, but not locally. For local usage replace ".lib." with "lib."
+# use "pip install -e ." to use "360monitoring" command with latest dev build locally based on local code.
 from .lib.config import Config
 from .lib.contacts import Contacts
+from .lib.recommendations import Recommendations
 from .lib.servers import Servers
 from .lib.sites import Sites
-from .lib.usertokens import UserTokens
 from .lib.statistics import Statistics
+from .lib.usertokens import UserTokens
+from .lib.wptoolkit import WPToolkit
 
-__version__ = '1.0.12'
+__version__ = '1.0.13'
 
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
@@ -84,6 +87,13 @@ def contacts(args):
 def dashboard(args):
     """Sub command for dashboard"""
     webbrowser.open('https://monitoring.platform360.io/')
+
+# --- recommendations functions ---
+
+def recommendations(args):
+    """Sub command for recommendations"""
+    recommendations = Recommendations(cfg)
+    recommendations.print(format=args.output)
 
 # --- servers functions ---
 
@@ -182,7 +192,7 @@ def statistics(args):
 def usertokens_create(args):
     """Sub command for usertokens create"""
     usertokens = UserTokens(cfg)
-    usertokens.create()
+    usertokens.create(name=args.name, tags=args.tag)
 
 def usertokens_list(args):
     """Sub command for usertokens list"""
@@ -192,6 +202,16 @@ def usertokens_list(args):
 def usertokens(args):
     """Sub command for usertokens"""
     cli_subcommands[args.subparser].print_help()
+
+# --- wptoolkit functions ---
+
+def wptoolkit(args):
+    """Sub command for wptoolkit"""
+    check_columns(args.columns)
+    wptoolkit = WPToolkit(cfg)
+    wptoolkit.print(format=args.output, issuesOnly=args.issues, sort=args.sort, reverse=args.reverse, limit=args.limit)
+
+# --- configure & parse CLI ---
 
 def performCLI():
     """Parse the command line parameters and call the related functions"""
@@ -254,6 +274,14 @@ def performCLI():
 
     cli_dashboard = subparsers.add_parser('dashboard', help='open 360 Monitoring Dashboard in your Web Browser')
     cli_dashboard.set_defaults(func=dashboard)
+
+    # recommendations
+
+    cli_recommendations = subparsers.add_parser('recommendations', help='show upgrade recommendations for servers that exceed their limits')
+    cli_recommendations.set_defaults(func=recommendations)
+    cli_recommendations.add_argument('--output', choices=['csv', 'table'], default='table', help='output format for the data')
+    cli_recommendations.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
+    cli_recommendations.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
 
     # servers
 
@@ -353,6 +381,8 @@ def performCLI():
 
     cli_usertokens_create = cli_usertokens_subparsers.add_parser('create', help='create new user token')
     cli_usertokens_create.set_defaults(func=usertokens_create)
+    cli_usertokens_create.add_argument('--name', nargs='?', default='', metavar='name', help='name of the new token (optional)')
+    cli_usertokens_create.add_argument('--tag', nargs='?', default='', metavar='tag', help='set a tag for the new token (optional)')
 
     cli_usertokens_list = cli_usertokens_subparsers.add_parser('list', help='list usertokens')
     cli_usertokens_list.set_defaults(func=usertokens_list)
@@ -361,23 +391,40 @@ def performCLI():
     cli_usertokens_list.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
     cli_usertokens_list.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
 
+    # wptoolkit
+
+    cli_wptoolkit = subparsers.add_parser('wptoolkit', help='list statistics of WP Toolkit if installed')
+    cli_wptoolkit.set_defaults(func=wptoolkit)
+
+    cli_wptoolkit.add_argument('--issues', action='store_true', help='show only servers with WordPress issues')
+    cli_wptoolkit.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_wptoolkit.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_wptoolkit.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_wptoolkit.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
+    cli_wptoolkit.add_argument('--output', choices=['csv', 'table'], default='table', help='output format for the data')
+    cli_wptoolkit.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
+    cli_wptoolkit.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
+
     # Parse
 
     cli_subcommands['config'] = cli_config
     cli_subcommands['contacts'] = cli_contacts
     cli_subcommands['dashboard'] = cli_dashboard
+    cli_subcommands['recommendations'] = cli_recommendations
     cli_subcommands['servers'] = cli_servers
     cli_subcommands['signup'] = cli_signup
     cli_subcommands['sites'] = cli_sites
     cli_subcommands['statistics'] = cli_statistics
     cli_subcommands['usertokens'] = cli_usertokens
+    cli_subcommands['wptoolkit'] = cli_wptoolkit
 
     args = cli.parse_args()
     if args.subparser == None:
         if args.version:
             print('360 Monitoring CLI Version:', __version__)
         elif 'func' in args:
-            # statistics, signup and dashboard is shown directly without subparser
+            # recommendations, statistics, signup, wptoolkit and dashboard is shown directly without subparser
             if args.func == config:
                 cli_config.print_help()
             elif args.func == contacts:

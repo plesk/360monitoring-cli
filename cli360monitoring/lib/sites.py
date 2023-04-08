@@ -195,9 +195,9 @@ class Sites(object):
     def printHeader(self):
         """Print CSV header if CSV format requested"""
         if (self.format == 'csv'):
-            print('id;url;name;code;status;status_message;uptime_percentage;ttfb;location')
+            print(self.config.delimiter.join(['ID', 'URL', 'Name', 'Code', 'Status', 'Status Message', 'Uptime %', 'Time to first Byte', 'Location']))
 
-    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0, delimiter: str = ';'):
+    def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
@@ -252,7 +252,7 @@ class Sites(object):
             print(list_of_table_lines[0])
 
         # elif (self.format == 'csv'):
-        #    print(self.table.get_csv_string(delimiter=delimiter))
+        #    print(self.table.get_csv_string(delimiter=self.config.delimiter))
 
     def print(self, monitor):
         """Print the data of the specified web monitor"""
@@ -279,8 +279,7 @@ class Sites(object):
             ttfb = -1
 
         if (self.format == 'csv'):
-            #self.table.add_row([id, url, status_message, uptime_percentage, ttfb, location])
-            print(f"{id};{url};{name};{code};{status};{status_message};{uptime_percentage}%;{ttfb};{location}")
+            print(self.config.delimiter.join([id, url, name, str(code), status, status_message, str(uptime_percentage) + '%', str(ttfb), location]))
         else:
             if uptime_percentage <= float(self.config.threshold_uptime):
                 uptime_percentage_text = f"{bcolors.FAIL}" + "{:.4f}".format(uptime_percentage) + f"{bcolors.ENDC}"

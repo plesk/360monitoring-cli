@@ -122,35 +122,58 @@ class Servers(object):
 
         printWarn('No server with given pattern found: ' + pattern)
 
-    def hasIssue(self, server):
-        """Return True if the specified server has some issue by having a value outside of the expected threshold specified in config file"""
-
-        cpu_usage_percent = server['summary']['cpu_usage_percent'] if 'summary' in server else 0
-        mem_usage_percent = server['summary']['mem_usage_percent'] if 'summary' in server else 0
-        disk_usage_percent = server['summary']['disk_usage_percent'] if 'summary' in server else 0
-
-        if cpu_usage_percent >= float(self.config.threshold_cpu_usage) \
-            or mem_usage_percent >= float(self.config.threshold_mem_usage) \
-            or disk_usage_percent >= float(self.config.threshold_disk_usage):
-            return True
+    def getRecommendation(self, server):
+        """Return recommendation text if the specified server has some issue by having a value outside of the expected threshold specified in config file"""
 
         last_data = server['last_data']
-        if 'df' in last_data:
+
+        mem_usage_percent = server['summary']['mem_usage_percent'] if 'summary' in server else 0
+        memory_total = last_data['memory']['total'] if 'memory' in last_data else 0
+        if memory_total > 0 and mem_usage_percent >= float(self.config.threshold_mem_usage):
+            memory_total_gb = memory_total / 1024 / 1024
+            memory_total_gb_recommended = round(memory_total_gb * 2)
+            if (memory_total_gb_recommended % 2) != 0:
+                memory_total_gb_recommended += 1
+            return 'Memory is too small for your workload. Please consider upgrading to a larger server with at least ' + str(memory_total_gb_recommended) + ' GB memory.'
+
+        cpu_usage_percent = server['summary']['cpu_usage_percent'] if 'summary' in server else 0
+        cores = last_data['cores'] if 'cores' in last_data else 0
+        if cores > 0 and cpu_usage_percent >= float(self.config.threshold_cpu_usage):
+            cores_recommended = round(cores * 2)
+            if (cores % 2) != 0:
+                cores += 1
+            return 'CPU is too small for your workload. Please consider upgrading to a larger server with at least ' + str(cores_recommended) + ' CPU cores.'
+
+        disk_usage_percent = server['summary']['disk_usage_percent'] if 'summary' in server else 0
+        last_data = server['last_data']
+        if 'df' in last_data:  # disk_usage_percent >= float(self.config.threshold_disk_usage)
             for disk in last_data['df']:
+                mount = disk['mount']
                 free_disk_space = disk['free_bytes']
                 used_disk_space = disk['used_bytes']
                 total_disk_space = free_disk_space + used_disk_space
                 free_disk_space_percent = free_disk_space / total_disk_space * 100
+                total_disk_space_gb = total_disk_space / 1024 / 1024
+                total_disk_space_gb_recommended = round(total_disk_space_gb * 2)
+                if (total_disk_space_gb_recommended % 2) != 0:
+                    total_disk_space_gb_recommended += 1
 
                 if free_disk_space_percent <= float(self.config.threshold_free_diskspace):
-                    return True
+                    return 'Disk volume "' + mount + '" is almost exhausted. Please consider extending your storage volume or upgrading to a larger server with at least ' + str(total_disk_space_gb_recommended) + ' GB disk space for this volume.'
 
-        return False
+        return ''
+
+    def hasIssue(self, server):
+        """Return True if the specified server has some issue by having a value outside of the expected threshold specified in config file"""
+        if self.getRecommendation(server):
+            return True
+        else:
+            return False
 
     def printHeader(self):
         """Print CSV if CSV format requested"""
         if (self.format == 'csv'):
-            print('id;server name;ip address;status;os;cpu usage %;mem usage %;disk usage %;free disk space;tags')
+            print(self.config.delimiter.join(self.table.field_names))
 
     def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0):
         """Print table if table format requested"""
@@ -291,6 +314,6 @@ class Servers(object):
                     disk_info += "{:.0f}".format(free_disk_space_percent) + "% free on " + mount
 
         if (self.format == 'csv'):
-            print(f"{id};{name};{ip_address};{status};{os};{cpu_usage_percent};{mem_usage_percent};{disk_usage_percent};{disk_info};{tags}")
+            print(self.config.delimiter.join([id, name, ip_address, status, os, str(cpu_usage_percent) + '%', str(mem_usage_percent) + '%', str(disk_usage_percent) + '%', disk_info, tags]))
         else:
             self.table.add_row([id, name, ip_address, status, os, cpu_usage_percent_text, mem_usage_percent_text, disk_usage_percent_text, disk_info, tags])

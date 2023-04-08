@@ -14,7 +14,10 @@ class UserTokens(object):
         self.usertokens = None
 
         self.table = PrettyTable()
-        self.table.field_names = ['Token']
+        self.table.field_names = ['Token', 'Name', 'Tags']
+        self.table.align['Token'] = 'l'
+        self.table.align['Name'] = 'l'
+        self.table.align['Tags'] = 'l'
 
     def fetchData(self):
         """Retrieve the list of all usertokens"""
@@ -48,7 +51,7 @@ class UserTokens(object):
             self.usertokens = None
             return False
 
-    def list(self, token: str = '', format: str = 'table', delimiter: str = ';'):
+    def list(self, token: str = '', format: str = 'table'):
         """Iterate through list of usertokens and print details"""
 
         if self.fetchData():
@@ -70,7 +73,7 @@ class UserTokens(object):
             if (format == 'table'):
                 print(self.table)
             elif (format == 'csv'):
-                print(self.table.get_csv_string(delimiter=delimiter))
+                print(self.table.get_csv_string(delimiter=self.config.delimiter))
 
     def token(self):
         """Print the data of first usertoken"""
@@ -78,7 +81,7 @@ class UserTokens(object):
         if self.fetchData() and len(self.usertokens) > 0:
             return self.usertokens[0]['token']
 
-    def create(self):
+    def create(self, name: str = '', tags: str = ''):
         """Create a new usertoken"""
 
         # check if headers are correctly set for authorization
@@ -91,7 +94,13 @@ class UserTokens(object):
         if self.config.readonly:
             return False
 
-        response = requests.post(self.config.endpoint + 'usertoken',  headers=self.config.headers())
+        parameters = ''
+        if name and tags:
+            parameters = 'name=' + name + '&tags=' + tags
+        elif name:
+            parameters = 'name=' + name
+
+        response = requests.post(self.config.endpoint + 'usertoken', data=parameters, headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
@@ -106,6 +115,17 @@ class UserTokens(object):
 
         if (format == 'json'):
             print(json.dumps(usertoken, indent=4))
-        else:
-            token = usertoken['token']
-            self.table.add_row([token])
+            return
+
+        token = usertoken['token']
+        name = usertoken['name'] if 'name' in usertoken and usertoken['name'] else ''
+
+        tags = ''
+        if 'tags' in usertoken and usertoken['tags']:
+            for tag in usertoken['tags']:
+                if tags:
+                    tags += ', ' + tag
+                else:
+                    tags = tag
+
+        self.table.add_row([token, name, tags])

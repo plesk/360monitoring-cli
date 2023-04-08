@@ -18,6 +18,7 @@ class Config(object):
         self.debug = False
         self.readonly = False
         self.hide_ids = False
+        self.delimiter = ','
 
         self.threshold_uptime = 99.0
         self.threshold_ttfb = 1.0
