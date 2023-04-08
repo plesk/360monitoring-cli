@@ -35,7 +35,7 @@ You can easily test and run 360 Monitoring CLI for production by running the pre
 
     $ docker run -it --rm ubuntu /bin/bash
     $ apt-get update && apt-get install -y python3 && apt-get install -y pip
-    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.12"
+    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.13"
 
 ### For developement, install required Python modules
 
@@ -68,9 +68,12 @@ Test the deployed CLI package:
     $ 360monitoring servers list --tag cpanel     display only servers with tag "cpanel"
     $ 360monitoring sites list                    display all monitored sites
     $ 360monitoring sites list --issues           display monitored sites with issues only
+    $ 360monitoring sites list --sort 6 --limit 5 display worst 5 monitored sites by uptime
     $ 360monitoring contacts list                 display all contacts
     $ 360monitoring usertokens list               display user tokens
     $ 360monitoring config print                  display your current settings and where those are stored
+    $ 360monitoring recommendations               display upgrade recommendations for servers that exceed their limits
+    $ 360monitoring wptoolkit                     display statistics of WP Toolkit if installed
 
     $ 360monitoring sites add --url domain.tld    start monitoring a new website
     $ 360monitoring servers update --name cpanel123.hoster.com --tag production   tag a specific server

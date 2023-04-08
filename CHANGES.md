@@ -1,3 +1,9 @@
+# 1.0.13
+
+* [*] Added columns "Name" and "Tags" for user tokens.
+* [*] Added "recommendations" command to display upgrade recommendations for servers that have exceeded their limits for the current workload.
+* [*] Added "wptoolkit" command to list statistics about WordPress sites and issues with those from servers that run WP Toolkit.
+
 # 1.0.11
 
 * [*] Added option to limit the number of printed items with --limit n.
@@ -5,8 +11,8 @@
 
 # 1.0.10
 
-* [*] Added signup command to get your 360 Monitoring account if you don't have one yet.
-* [*] Added dashboard command to open 360 Monitoring in your Web Browser.
+* [*] Added "signup" command to get your 360 Monitoring account if you don't have one yet.
+* [*] Added "dashboard" command to open 360 Monitoring in your Web Browser.
 
 # 1.0.9
 
@@ -17,7 +23,7 @@
 * [*] Print more data for servers. Added ability to set tags for specified servers. Added more statistics.
 # 1.0.4
 
-* [*] Added statistics sub command.
+* [*] Added "statistics" command.
 
 # 1.0.1
 
