@@ -1,3 +1,8 @@
+# 1.0.14
+
+* [*] Improved server query speed for filtered servers by tags by specifying the tags as query parameter.
+* [*] Added ability to add incidents and list them for a given status page.
+
 # 1.0.13
 
 * [*] Added columns "Name" and "Tags" for user tokens.
@@ -7,7 +12,7 @@
 # 1.0.11
 
 * [*] Added option to limit the number of printed items with --limit n.
-* [*] Added option to sort items in a table according to the specified criteria with --sort COLUMN --reverse
+* [*] Added option to sort items in a table according to the specified criteria with --sort COLUMN --reverse.
 
 # 1.0.10
 

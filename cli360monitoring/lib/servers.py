@@ -27,7 +27,7 @@ class Servers(object):
         self.sum_disk_usage = 0
         self.num_servers = 0
 
-    def fetchData(self):
+    def fetchData(self, tags: str = ''):
         """Retrieve a list of all monitored servers"""
 
         # if data is already downloaded, use cached data
@@ -39,16 +39,22 @@ class Servers(object):
             return False
 
         if self.config.debug:
-            print('GET', self.config.endpoint + 'servers?', self.config.params())
+            print('GET', self.config.endpoint + 'servers?', self.config.params(tags))
 
         # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'servers', params=self.config.params(), headers=self.config.headers())
+        response = requests.get(self.config.endpoint + 'servers', params=self.config.params(tags), headers=self.config.headers())
 
         # Check status code of response
         if response.status_code == 200:
             # Get list of servers from response
-            self.servers = response.json()['servers']
-            return True
+            json = response.json()
+            if 'servers' in json:
+                self.servers = json['servers']
+                return True
+            else:
+                printWarn('No servers found for tags', tags)
+                self.servers = None
+                return False
         else:
             printError('An error occurred:', response.status_code)
             self.servers = None
@@ -81,7 +87,7 @@ class Servers(object):
     def list(self, issuesOnly: bool, sort: str, reverse: bool, limit: int, tags):
         """Iterate through list of server monitors and print details"""
 
-        if self.fetchData():
+        if self.fetchData(','.join(tags)):
 
             # if JSON was requested and no filters, then just print it without iterating through
             if (self.format == 'json' and not (issuesOnly or len(tags) > 0 or limit > 0)):

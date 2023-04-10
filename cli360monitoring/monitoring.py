@@ -9,6 +9,7 @@ import webbrowser
 # use "pip install -e ." to use "360monitoring" command with latest dev build locally based on local code.
 from .lib.config import Config
 from .lib.contacts import Contacts
+from .lib.incidents import Incidents
 from .lib.recommendations import Recommendations
 from .lib.servers import Servers
 from .lib.sites import Sites
@@ -16,7 +17,7 @@ from .lib.statistics import Statistics
 from .lib.usertokens import UserTokens
 from .lib.wptoolkit import WPToolkit
 
-__version__ = '1.0.13'
+__version__ = '1.0.14'
 
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
@@ -87,6 +88,28 @@ def contacts(args):
 def dashboard(args):
     """Sub command for dashboard"""
     webbrowser.open('https://monitoring.platform360.io/')
+
+# --- incidents functions ---
+
+def incidents_add(args):
+    """Sub command for incidents add"""
+    incidents = Incidents(cfg)
+    incidents.add(page_id=args.page_id, name=args.name, body=args.body)
+
+def incidents_list(args):
+    """Sub command for incidents list"""
+    incidents = Incidents(cfg)
+    incidents.format = args.output
+    incidents.list(page_id=args.page_id, name=args.name)
+
+def incidents_remove(args):
+    """Sub command for incidents remove"""
+    incidents = Incidents(cfg)
+    incidents.remove(page_id=args.page_id, id=args.id, name=args.name)
+
+def incidents(args):
+    """Sub command for incidents"""
+    cli_subcommands[args.subparser].print_help()
 
 # --- recommendations functions ---
 
@@ -275,6 +298,34 @@ def performCLI():
     cli_dashboard = subparsers.add_parser('dashboard', help='open 360 Monitoring Dashboard in your Web Browser')
     cli_dashboard.set_defaults(func=dashboard)
 
+    # incidents
+
+    cli_incidents = subparsers.add_parser('incidents', help='list and manage incidents')
+    cli_incidents.set_defaults(func=incidents)
+    cli_incidents_subparsers = cli_incidents.add_subparsers(title='commands', dest='subparser')
+
+    cli_incidents_add = cli_incidents_subparsers.add_parser('add', help='add a new incident')
+    cli_incidents_add.set_defaults(func=incidents_add)
+    cli_incidents_add.add_argument('--page-id', required=True, metavar='page_id', help='list incidents from status page with given ID')
+    cli_incidents_add.add_argument('--name', required=True, metavar='name', help='name of the new incident')
+    cli_incidents_add.add_argument('--body', metavar='body', help='text of the new incident')
+
+    cli_incidents_list = cli_incidents_subparsers.add_parser('list', help='list incidents')
+    cli_incidents_list.set_defaults(func=incidents_list)
+    cli_incidents_list.add_argument('--page-id', required=True, metavar='page_id', help='list incidents from status page with given ID')
+    cli_incidents_list.add_argument('--name', nargs='?', default='', metavar='name', help='list incidents with given name')
+
+    cli_incidents_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
+    cli_incidents_list.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
+    cli_incidents_list.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
+    cli_incidents_list.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
+
+    cli_incidents_remove = cli_incidents_subparsers.add_parser('remove', help='remove an incident')
+    cli_incidents_remove.set_defaults(func=incidents_remove)
+    cli_incidents_remove.add_argument('--page-id', required=True, metavar='page_id', help='remove incidents from status page with given ID')
+    cli_incidents_remove.add_argument('--id', nargs='?', default='', metavar='id', help='remove incident with given ID')
+    cli_incidents_remove.add_argument('--name', nargs='?', default='', metavar='name', help='remove incident with given name')
+
     # recommendations
 
     cli_recommendations = subparsers.add_parser('recommendations', help='show upgrade recommendations for servers that exceed their limits')
@@ -411,6 +462,7 @@ def performCLI():
     cli_subcommands['config'] = cli_config
     cli_subcommands['contacts'] = cli_contacts
     cli_subcommands['dashboard'] = cli_dashboard
+    cli_subcommands['incidents'] = cli_incidents
     cli_subcommands['recommendations'] = cli_recommendations
     cli_subcommands['servers'] = cli_servers
     cli_subcommands['signup'] = cli_signup
@@ -429,6 +481,8 @@ def performCLI():
                 cli_config.print_help()
             elif args.func == contacts:
                 cli_contacts.print_help()
+            elif args.func == incidents:
+                cli_incidents.print_help()
             elif args.func == servers:
                 cli_servers.print_help()
             elif args.func == sites:

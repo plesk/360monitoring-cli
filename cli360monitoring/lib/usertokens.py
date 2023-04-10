@@ -41,9 +41,10 @@ class UserTokens(object):
             # Get list of usertokens from response
             json = response.json()
             if 'tokens' in json:
-                self.usertokens = response.json()['tokens']
+                self.usertokens = json['tokens']
                 return True
             else:
+                printWarn('No usertokens found')
                 self.usertokens = None
                 return False
         else:

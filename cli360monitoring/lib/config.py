@@ -41,13 +41,18 @@ class Config(object):
             printError('ERROR: No API key specified in ' + self.filename + ". Please run \"360monitoring config save --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.")
             return {}
 
-    def params(self):
+    def params(self, tags:str = ''):
         """Set params for http requests"""
 
-        return {
-            'perpage': self.max_items,
-            'api_mode': 'cli_' + self.version
-        }
+        params = {
+                'perpage': self.max_items,
+                'api_mode': 'cli_' + self.version
+            }
+
+        if tags:
+            params['tags'] = tags
+
+        return params
 
     def loadFromFile(self):
         """Read API endpoint and API key from config file"""

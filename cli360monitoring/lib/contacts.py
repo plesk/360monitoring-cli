@@ -42,8 +42,14 @@ class Contacts(object):
         # Check status code of response
         if response.status_code == 200:
             # Get list of contacts from response
-            self.contacts = response.json()['contacts']
-            return True
+            json = response.json()
+            if 'contacts' in json:
+                self.contacts = json['contacts']
+                return True
+            else:
+                printWarn('No contacts found')
+                self.contacts = None
+                return False
         else:
             printError('An error occurred:', response.status_code)
             self.contacts = None
