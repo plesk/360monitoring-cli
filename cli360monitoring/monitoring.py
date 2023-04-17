@@ -24,6 +24,10 @@ from .lib.wptoolkit import WPToolkit
 
 __version__ = '1.0.14'
 
+# only runs on Python 3.x; throw exception on 2.x
+if sys.version_info[0] < 3:
+    raise Exception("360 Monitoring CLI requires Python 3.x")
+
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
 cli_subcommands = dict()
@@ -32,11 +36,13 @@ def check_version():
     """Check PyPi if there is a newer version of the application, but only once every 24 hours"""
 
     # skip version check if the last one was within 24 hours already
-    if cfg.last_version_check and datetime.fromisoformat(cfg.last_version_check) > (datetime.now() - timedelta(hours = 24)):
+    if cfg.last_version_check and datetime.strptime(cfg.last_version_check, '%Y-%m-%dT%H:%M:%S.%f') > (datetime.now() - timedelta(hours=24)):
         return
 
-    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], capture_output=True, text=True))
-    latest_version = latest_version[latest_version.find('(from versions:')+15:]
+    cmd_output = subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    latest_version = cmd_output.stdout[cmd_output.stdout.find('(from versions:')+15:]
+    # latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], capture_output=True, text=True))
+    # latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
     cfg.last_version_check = datetime.now().isoformat()
