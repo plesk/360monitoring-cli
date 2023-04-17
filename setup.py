@@ -50,4 +50,5 @@ setuptools.setup(
         'LICENSE',
         'README.md',
     ])],
+    python_requires='>=3.4'
 )
