@@ -43,9 +43,9 @@ class Incidents(object):
         # Check status code of response
         if response.status_code == 200:
             # Get list of incidents from response
-            json = response.json()
-            if 'incidents' in json:
-                self.incidents = json['incidents']
+            response_json = response.json()
+            if 'incidents' in response_json:
+                self.incidents = response_json['incidents']
                 return True
             else:
                 printWarn('No incidents found for page', page_id)

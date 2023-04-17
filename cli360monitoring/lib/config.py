@@ -14,11 +14,13 @@ class Config(object):
         self.filename = '360monitoring.ini'
         self.endpoint = 'https://api.monitoring360.io/v1/'
         self.api_key = ''
+        self.usertoken = ''
         self.max_items = 5000
         self.debug = False
         self.readonly = False
         self.hide_ids = False
         self.delimiter = ','
+        self.last_version_check = ''
 
         self.threshold_uptime = 99.0
         self.threshold_ttfb = 1.0
@@ -61,12 +63,19 @@ class Config(object):
             parser = configparser.ConfigParser()
             parser.read(self.filename)
 
+            if 'General' in parser.sections():
+                if 'last-version-check' in parser['General']:
+                    self.last_version_check = parser['General']['last-version-check']
+
             if 'Connection' in parser.sections():
                 if 'endpoint' in parser['Connection']:
                     self.endpoint = parser['Connection']['endpoint']
 
                 if 'api-key' in parser['Connection']:
                     self.api_key = parser['Connection']['api-key']
+
+                if 'usertoken' in parser['Connection']:
+                    self.usertoken = parser['Connection']['usertoken']
 
                 if 'max-items' in parser['Connection']:
                     self.max_items = parser['Connection']['max-items']
@@ -99,12 +108,16 @@ class Config(object):
                 if 'max-disk-usage-percent' in parser['Thresholds']:
                     self.threshold_disk_usage = parser['Thresholds']['max-disk-usage-percent']
 
-    def saveToFile(self):
+    def saveToFile(self, printInfo : bool = True):
         """Save settings to config file"""
 
         parser = configparser.ConfigParser()
+        parser['General'] = {
+            'last-version-check': self.last_version_check,
+        }
         parser['Connection'] = {
             'api-key': self.api_key,
+            'usertoken': self.usertoken,
             'endpoint': self.endpoint,
             'max-items': self.max_items,
             'hide-ids': self.hide_ids,
@@ -123,7 +136,8 @@ class Config(object):
         with open(self.filename, 'w') as config_file:
             parser.write(config_file)
 
-        print('Saved settings to', self.filename)
+        if printInfo:
+            print('Saved settings to', self.filename)
 
     def print(self):
         """Print current settings"""
@@ -141,6 +155,10 @@ class Config(object):
             print('api-key:                   ', self.api_key)
         else:
             print(f"api-key:                    {bcolors.FAIL}No API key specified in " + self.filename + f". Please run \"360monitoring config save --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.{bcolors.ENDC}")
+        if self.usertoken:
+            print('usertoken:                 ', self.usertoken)
+        else:
+            print(f"usertoken:                  {bcolors.FAIL}No usertoken specified in " + self.filename + f". Please run \"360monitoring config save --usertoken YOUR_TOKEN\" to use it for creating magic links.{bcolors.ENDC}")
         print('max items:                 ', self.max_items)
         print('hide ids:                  ', self.hide_ids)
         print('debug:                     ', self.debug)

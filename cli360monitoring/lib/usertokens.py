@@ -39,9 +39,9 @@ class UserTokens(object):
         # Check status code of response
         if response.status_code == 200:
             # Get list of usertokens from response
-            json = response.json()
-            if 'tokens' in json:
-                self.usertokens = json['tokens']
+            response_json = response.json()
+            if 'tokens' in response_json:
+                self.usertokens = response_json['tokens']
                 return True
             else:
                 printWarn('No usertokens found')

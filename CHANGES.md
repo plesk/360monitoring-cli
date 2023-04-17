@@ -1,7 +1,9 @@
 # 1.0.14
 
-* [*] Improved server query speed for filtered servers by tags by specifying the tags as query parameter.
 * [*] Added ability to add incidents and list them for a given status page.
+* [*] Added ability to create magic links for specific readonly server dashboards.
+* [*] Added check for latest version to recommend using the latest version if the local one is outdated.
+* [*] Improved server query speed for filtered servers by tags by specifying the tags as query parameter.
 
 # 1.0.13
 

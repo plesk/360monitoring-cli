@@ -49,9 +49,9 @@ class Sites(object):
         # Check status code of response
         if response.status_code == 200:
             # Get list of monitors from response
-            json = response.json()
-            if 'monitors' in json:
-                self.monitors = json['monitors']
+            response_json = response.json()
+            if 'monitors' in response_json:
+                self.monitors = response_json['monitors']
                 return True
             else:
                 printWarn('No monitors found')

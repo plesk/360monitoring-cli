@@ -47,9 +47,9 @@ class Servers(object):
         # Check status code of response
         if response.status_code == 200:
             # Get list of servers from response
-            json = response.json()
-            if 'servers' in json:
-                self.servers = json['servers']
+            response_json = response.json()
+            if 'servers' in response_json:
+                self.servers = response_json['servers']
                 return True
             else:
                 printWarn('No servers found for tags', tags)
@@ -101,7 +101,7 @@ class Servers(object):
             self.sum_disk_usage = 0
             self.num_servers = 0
 
-            # Iterate through list of monitors and print urls, etc.
+            # Iterate through list of servers and print data, etc.
             for server in self.servers:
                 if len(tags) == 0:
                     if (not issuesOnly) or self.hasIssue(server):
@@ -127,6 +127,17 @@ class Servers(object):
                     return self.update(server['id'], tags)
 
         printWarn('No server with given pattern found: ' + pattern)
+
+    def getServerId(self, name: str):
+        """Return Server Id for the server with the specified name. Only the first matching entry (exact match) is returned or empty string if not found"""
+
+        if name and self.fetchData():
+            # Iterate through list of servers and find the specified one
+            for server in self.servers:
+                if server['name'] == name:
+                    return server['id']
+
+        return ''
 
     def getRecommendation(self, server):
         """Return recommendation text if the specified server has some issue by having a value outside of the expected threshold specified in config file"""

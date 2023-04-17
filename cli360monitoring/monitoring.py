@@ -3,13 +3,18 @@
 import os
 import argparse
 import json
+import subprocess
+import sys
 import webbrowser
+
+from datetime import datetime, timedelta
 
 # suprisingly this works in PyPi, but not locally. For local usage replace ".lib." with "lib."
 # use "pip install -e ." to use "360monitoring" command with latest dev build locally based on local code.
 from .lib.config import Config
 from .lib.contacts import Contacts
 from .lib.incidents import Incidents
+from .lib.magiclinks import MagicLinks
 from .lib.recommendations import Recommendations
 from .lib.servers import Servers
 from .lib.sites import Sites
@@ -22,6 +27,23 @@ __version__ = '1.0.14'
 cfg = Config(__version__)
 cli = argparse.ArgumentParser(prog='360monitoring', description='CLI for 360 Monitoring')
 cli_subcommands = dict()
+
+def check_version():
+    """Check PyPi if there is a newer version of the application, but only once every 24 hours"""
+
+    # skip version check if the last one was within 24 hours already
+    if cfg.last_version_check and datetime.fromisoformat(cfg.last_version_check) > (datetime.now() - timedelta(hours = 24)):
+        return
+
+    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], capture_output=True, text=True))
+    latest_version = latest_version[latest_version.find('(from versions:')+15:]
+    latest_version = latest_version[:latest_version.find(')')]
+    latest_version = latest_version.replace(' ','').split(',')[-1]
+    cfg.last_version_check = datetime.now().isoformat()
+    cfg.saveToFile(False)
+
+    if latest_version > __version__:
+        print('Update available: Please upgrade from', __version__, 'to', latest_version, 'with: pip install 360monitoringcli --upgrade')
 
 def check_columns(columns):
     """Show or hide columns in ASCII table view"""
@@ -41,6 +63,9 @@ def config_save(args):
     """Sub command for config save"""
     if args.api_key:
         cfg.api_key = args.api_key
+
+    if args.usertoken:
+        cfg.usertoken = args.usertoken
 
     cfg.saveToFile()
 
@@ -109,6 +134,51 @@ def incidents_remove(args):
 
 def incidents(args):
     """Sub command for incidents"""
+    cli_subcommands[args.subparser].print_help()
+
+# --- magiclink functions ---
+
+def magiclinks_create(args):
+    """Sub command for magiclink create"""
+    serverId = ''
+
+    if args.usertoken:
+        usertoken = args.usertoken
+    else:
+        usertoken = cfg.usertoken
+
+    # else:
+    #     usertokens = UserTokens(cfg)
+    #     usertoken = usertokens.token()
+    #     if not usertoken:
+    #         print('First create a user token by executing:')
+    #         print()
+    #         print('360monitoring usertokens create')
+    #         return
+
+    if args.id:
+        serverId = args.id
+    elif args.name:
+        # find correct server id for the server with the specified name
+        servers = Servers(cfg)
+        serverId = servers.getServerId(args.name)
+
+    if usertoken and serverId:
+        magiclinks = MagicLinks(cfg)
+        magiclink = magiclinks.create(usertoken, serverId, 'Dashboard')
+
+        if magiclink and args.open:
+            webbrowser.open(magiclink)
+
+        # if usertoken is not yet stored in config, do it now
+        if not cfg.usertoken:
+            cfg.usertoken = usertoken
+            cfg.saveToFile(False)
+    else:
+        print('Please specify an existing server either by "--id id" or "--name hostname" and specifiy your user token "--usertoken token"')
+
+def magiclinks(args):
+    """Sub command for magiclink"""
     cli_subcommands[args.subparser].print_help()
 
 # --- recommendations functions ---
@@ -254,7 +324,8 @@ def performCLI():
 
     cli_config_save = config_subparsers.add_parser('save', help='save current settings for 360 Monitoring to ' + cfg.filename)
     cli_config_save.set_defaults(func=config_save)
-    cli_config_save.add_argument('-a', '--api-key', metavar='key', help='specify your API KEY for 360 Monitoring')
+    cli_config_save.add_argument('--api-key', metavar='key', help='specify your API KEY for 360 Monitoring')
+    cli_config_save.add_argument('--usertoken', metavar='usertoken', help='specify your USERTOKEN for 360 Monitoring')
 
     # contacts
 
@@ -325,6 +396,19 @@ def performCLI():
     cli_incidents_remove.add_argument('--page-id', required=True, metavar='page_id', help='remove incidents from status page with given ID')
     cli_incidents_remove.add_argument('--id', nargs='?', default='', metavar='id', help='remove incident with given ID')
     cli_incidents_remove.add_argument('--name', nargs='?', default='', metavar='name', help='remove incident with given name')
+
+    # magiclinks
+
+    cli_magiclinks = subparsers.add_parser('magiclinks', help='create a magic link for the dasboard of a specific server')
+    cli_magiclinks.set_defaults(func=magiclinks)
+    cli_magiclinks_subparsers = cli_magiclinks.add_subparsers(title='commands', dest='subparser')
+
+    cli_magiclinks_create = cli_magiclinks_subparsers.add_parser('create', help='create new magic link to access the (readonly) dashboard for a specific server only')
+    cli_magiclinks_create.set_defaults(func=magiclinks_create)
+    cli_magiclinks_create.add_argument('--id', nargs='?', default='', metavar='id', help='create magic link for server with given ID')
+    cli_magiclinks_create.add_argument('--name', nargs='?', default='', metavar='name', help='create magic link for server with given name')
+    cli_magiclinks_create.add_argument('--usertoken', nargs='?', default='', metavar='usertoken', help='use this usertoken for authentication')
+    cli_magiclinks_create.add_argument('--open', action='store_true', help='open the server dashboard directly in the default web browser (optional)')
 
     # recommendations
 
@@ -463,6 +547,7 @@ def performCLI():
     cli_subcommands['contacts'] = cli_contacts
     cli_subcommands['dashboard'] = cli_dashboard
     cli_subcommands['incidents'] = cli_incidents
+    cli_subcommands['magiclinks'] = cli_magiclinks
     cli_subcommands['recommendations'] = cli_recommendations
     cli_subcommands['servers'] = cli_servers
     cli_subcommands['signup'] = cli_signup
@@ -483,6 +568,8 @@ def performCLI():
                 cli_contacts.print_help()
             elif args.func == incidents:
                 cli_incidents.print_help()
+            elif args.func == magiclinks:
+                cli_magiclinks.print_help()
             elif args.func == servers:
                 cli_servers.print_help()
             elif args.func == sites:
@@ -497,6 +584,7 @@ def performCLI():
         args.func(args)
 
 def main():
+    check_version()
     performCLI()
 
 if __name__ == '__main__':
