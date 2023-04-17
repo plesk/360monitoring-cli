@@ -35,21 +35,22 @@ cli_subcommands = dict()
 def check_version():
     """Check PyPi if there is a newer version of the application, but only once every 24 hours"""
 
-    # skip version check if the last one was within 24 hours already
-    if cfg.last_version_check and datetime.strptime(cfg.last_version_check, '%Y-%m-%dT%H:%M:%S.%f') > (datetime.now() - timedelta(hours=24)):
-        return
+    # some code parts have been introduced in Python 3.7 and are not supported on older versions
+    if sys.version_info >= (3, 7):
 
-    cmd_output = subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    latest_version = cmd_output.stdout[cmd_output.stdout.find('(from versions:')+15:]
-    # latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], capture_output=True, text=True))
-    # latest_version = latest_version[latest_version.find('(from versions:')+15:]
-    latest_version = latest_version[:latest_version.find(')')]
-    latest_version = latest_version.replace(' ','').split(',')[-1]
-    cfg.last_version_check = datetime.now().isoformat()
-    cfg.saveToFile(False)
+        # skip version check if the last one was within 24 hours already
+        if cfg.last_version_check and datetime.fromisoformat(cfg.last_version_check) > (datetime.now() - timedelta(hours=24)):
+            return
 
-    if latest_version > __version__:
-        print('Update available: Please upgrade from', __version__, 'to', latest_version, 'with: pip install 360monitoringcli --upgrade')
+        latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '360monitoringcli==random'], capture_output=True, text=True))
+        latest_version = latest_version[latest_version.find('(from versions:')+15:]
+        latest_version = latest_version[:latest_version.find(')')]
+        latest_version = latest_version.replace(' ','').split(',')[-1]
+        cfg.last_version_check = datetime.now().isoformat()
+        cfg.saveToFile(False)
+
+        if latest_version > __version__:
+            print('Update available: Please upgrade from', __version__, 'to', latest_version, 'with: pip install 360monitoringcli --upgrade')
 
 def check_columns(columns):
     """Show or hide columns in ASCII table view"""
