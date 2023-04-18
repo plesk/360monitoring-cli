@@ -3,9 +3,10 @@
 import requests
 import json
 from prettytable import PrettyTable
+from datetime import datetime
 
 from .config import Config
-from .functions import printError, printWarn
+from .functions import printError, printWarn, formatDowntime, formatTimespan
 from .bcolors import bcolors
 
 class Sites(object):
@@ -61,6 +62,28 @@ class Sites(object):
             printError('An error occurred:', response.status_code)
             self.monitors = None
             return False
+
+    def getSiteId(self, url: str):
+        """Return Site Id for the monitor with the specified url or name. Only the first matching entry (exact match) is returned or empty string if not found"""
+
+        if url and self.fetchData():
+            # Iterate through list of monitors and find the specified one
+            for monitor in self.monitors:
+                if monitor['url'] == url or (monitor['name'] and monitor['name'] == url):
+                    return monitor['id']
+
+        return ''
+
+    def getSiteUrl(self, id: str):
+        """Return Site Url for the monitor with the specified id"""
+
+        if id and self.fetchData():
+            # Iterate through list of monitors and find the specified one
+            for monitor in self.monitors:
+                if monitor['id'] == id:
+                    return monitor['url']
+
+        return ''
 
     def list(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = '', issuesOnly: bool = False, sort: str = '', reverse: bool = False, limit: int = 0):
         """Iterate through list of web monitors and print details"""
@@ -197,6 +220,62 @@ class Sites(object):
                 return True
 
         return False
+
+    def getUptime(self, siteId: str, startTimestamp: float, endTimestamp: float):
+        """Retrieve uptime for the specified site within the specified uptime period"""
+
+        # check if headers are correctly set for authorization
+        if not self.config.headers():
+            return None
+
+        # make sure all parameters are defined
+        if not (siteId and startTimestamp > 0 and endTimestamp > 0):
+            return None
+
+        params = self.config.params()
+        params['start'] = startTimestamp
+        params['end'] = endTimestamp
+
+        if self.config.debug:
+            print('GET', self.config.endpoint + 'monitor/' + siteId + '/uptime?', params)
+
+        # Make request to API endpoint
+        response = requests.get(self.config.endpoint + 'monitor/' + siteId + '/uptime?', params=params, headers=self.config.headers())
+
+        # Check status code of response
+        if response.status_code == 200:
+            # Get uptime from response
+            response_json = response.json()
+            if 'uptime_percentage' in response_json:
+                return response_json
+            else:
+                printWarn('No uptime information available for site', siteId)
+                return None
+        else:
+            printError('An error occurred:', response.status_code)
+            return None
+
+    def listUptimes(self, siteId: str, periods, dateTimeFormat: str = '%Y-%m-%d'):
+        """Retrieve uptime for the specified site within the specified uptime periods"""
+
+        table = PrettyTable()
+        table.field_names = ['Uptime in %', 'Period', 'Downtime', 'Events']
+        table.align['Uptime in %'] = 'r'
+        table.align['Period'] = 'l'
+        table.align['Downtime'] = 'l'
+        table.align['Events'] = 'r'
+
+        for period in periods:
+            uptime_json = self.getUptime(siteId, period[0], period[1])
+            if uptime_json:
+                startDate = datetime.fromtimestamp(float(uptime_json['start']))
+                endDate = datetime.fromtimestamp(float(uptime_json['end']))
+                uptime_percentage = float(uptime_json['uptime_percentage'])
+                downtime_seconds = uptime_json['downtime_seconds']
+                events = uptime_json['events']
+                table.add_row(["{:.4f}%".format(uptime_percentage), formatTimespan(startDate, endDate, dateTimeFormat), formatDowntime(downtime_seconds), events])
+
+        print(table)
 
     def printHeader(self):
         """Print CSV header if CSV format requested"""

@@ -17,12 +17,13 @@ from .lib.incidents import Incidents
 from .lib.magiclinks import MagicLinks
 from .lib.recommendations import Recommendations
 from .lib.servers import Servers
+from .lib.servernotifications import ServerNotifications
 from .lib.sites import Sites
 from .lib.statistics import Statistics
 from .lib.usertokens import UserTokens
 from .lib.wptoolkit import WPToolkit
 
-__version__ = '1.0.15'
+__version__ = '1.0.16'
 
 # only runs on Python 3.x; throw exception on 2.x
 if sys.version_info[0] < 3:
@@ -73,6 +74,9 @@ def config_save(args):
 
     if args.usertoken:
         cfg.usertoken = args.usertoken
+
+    if args.debug:
+        cfg.debug = args.debug == 'on'
 
     cfg.saveToFile()
 
@@ -154,15 +158,6 @@ def magiclinks_create(args):
     else:
         usertoken = cfg.usertoken
 
-    # else:
-    #     usertokens = UserTokens(cfg)
-    #     usertoken = usertokens.token()
-    #     if not usertoken:
-    #         print('First create a user token by executing:')
-    #         print()
-    #         print('360monitoring usertokens create')
-    #         return
-
     if args.id:
         serverId = args.id
     elif args.name:
@@ -212,6 +207,23 @@ def servers_add(args):
     print('Please login via SSH to each of the servers you would like to add and execute the following command:')
     print()
     print('wget -q -N monitoring.platform360.io/agent360.sh && bash agent360.sh', token)
+
+def servers_events(args):
+    """Sub command for servers events"""
+    siteId = ''
+    startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
+    endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
+
+    if args.id:
+        serverId = args.id
+    elif args.name:
+        servers = Servers(cfg)
+        serverId = servers.getServerId(args.name)
+
+    if serverId:
+        notifications = ServerNotifications(cfg)
+        notifications.format = args.output
+        notifications.list(serverId, startDate.timestamp(), endDate.timestamp(), args.sort, args.reverse, args.limit)
 
 def servers_list(args):
     """Sub command for servers list"""
@@ -276,6 +288,50 @@ def sites_remove(args):
     sites = Sites(cfg)
     sites.remove(id=args.id, url=args.url, name=args.name, location=args.location, pattern=args.pattern)
 
+def sites_uptime(args):
+    """Sub command for sites uptime"""
+    siteId = ''
+    startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
+    endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
+    sites = Sites(cfg)
+
+    if args.id:
+        siteId = args.id
+    elif args.url:
+        siteId = sites.getSiteId(args.url)
+    elif args.name:
+        siteId = sites.getSiteId(args.name)
+
+    if siteId:
+        if args.daily:
+            periods = []
+            firstDate = startDate
+            while endDate > firstDate:
+                startDate = datetime(endDate.year, endDate.month, endDate.day, 0, 0, 0)
+                endDate = datetime(endDate.year, endDate.month, endDate.day, 23, 59, 59)
+                periods.append([startDate.timestamp(), endDate.timestamp()])
+                endDate = startDate - timedelta(days=1)
+            sites.listUptimes(siteId, periods)
+        elif args.monthly:
+            periods = []
+            firstDate = startDate
+            while endDate > firstDate:
+                startDate = datetime(endDate.year, endDate.month, 1, 0, 0, 0)
+                endDate = datetime(endDate.year, endDate.month, endDate.day, 23, 59, 59)
+                periods.append([startDate.timestamp(), endDate.timestamp()])
+                endDate = startDate - timedelta(days=1)
+            sites.listUptimes(siteId, periods, '%Y-%m')
+        elif args.start or args.end:
+            sites.listUptimes(siteId, [[startDate.timestamp(), endDate.timestamp()]])
+        else:
+            periods = []
+            periods.append([(datetime.now() - timedelta(days=1)).timestamp(), datetime.now().timestamp()])
+            periods.append([(datetime.now() - timedelta(days=7)).timestamp(), datetime.now().timestamp()])
+            periods.append([(datetime.now() - timedelta(days=30)).timestamp(), datetime.now().timestamp()])
+            periods.append([(datetime.now() - timedelta(days=90)).timestamp(), datetime.now().timestamp()])
+            periods.append([(datetime.now() - timedelta(days=365)).timestamp(), datetime.now().timestamp()])
+            sites.listUptimes(siteId, periods)
+
 def sites(args):
     """Sub command for sites"""
     cli_subcommands[args.subparser].print_help()
@@ -333,6 +389,7 @@ def performCLI():
     cli_config_save.set_defaults(func=config_save)
     cli_config_save.add_argument('--api-key', metavar='key', help='specify your API KEY for 360 Monitoring')
     cli_config_save.add_argument('--usertoken', metavar='usertoken', help='specify your USERTOKEN for 360 Monitoring')
+    cli_config_save.add_argument('--debug', choices=['on', 'off'], type=str, help='switch debug mode to print all API calls on or off')
 
     # contacts
 
@@ -434,6 +491,23 @@ def performCLI():
     cli_servers_add = cli_servers_subparsers.add_parser('add', help='activate monitoring for a server')
     cli_servers_add.set_defaults(func=servers_add)
 
+    cli_servers_events = cli_servers_subparsers.add_parser('events', help='list event notifications of a specified server')
+    cli_servers_events.set_defaults(func=servers_events)
+    cli_servers_events.add_argument('--id', nargs='?', default='', metavar='id', help='show event notifications for server with given ID')
+    cli_servers_events.add_argument('--name', nargs='?', default='', metavar='name', help='show event notifications for server with given name')
+    cli_servers_events.add_argument('--start', nargs='?', default='', help='select start date of notification period in form of yyyy-mm-dd')
+    cli_servers_events.add_argument('--end', nargs='?', default='', help='select end date of notification period in form of yyyy-mm-dd')
+
+    cli_servers_events.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_servers_events.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_servers_events.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_servers_events.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
+    cli_servers_events.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
+    cli_servers_events.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
+    cli_servers_events.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
+    cli_servers_events.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
+
     cli_servers_list = cli_servers_subparsers.add_parser('list', help='list monitored servers')
     cli_servers_list.set_defaults(func=servers_list)
     cli_servers_list.add_argument('--id', nargs='?', default='', metavar='id', help='update server with given ID')
@@ -506,6 +580,16 @@ def performCLI():
     cli_sites_remove.add_argument('--name', nargs='?', default='', metavar='name', help='remove site with given name')
     cli_sites_remove.add_argument('--location', nargs='?', default='', metavar='location', help='remove sites monitored from given location')
     cli_sites_remove.add_argument('--pattern', nargs='?', default='', metavar='pattern', help='remove sites with pattern included in URL')
+
+    cli_sites_uptime = cli_sites_subparsers.add_parser('uptime', help='show uptime')
+    cli_sites_uptime.set_defaults(func=sites_uptime)
+    cli_sites_uptime.add_argument('--id', nargs='?', default='', help='show uptime for site with given ID')
+    cli_sites_uptime.add_argument('--url', nargs='?', default='', help='show uptime for site with given url')
+    cli_sites_uptime.add_argument('--name', nargs='?', default='', help='show uptime for site with given name')
+    cli_sites_uptime.add_argument('--start', nargs='?', default='', help='select start date of uptime period in form of yyyy-mm-dd')
+    cli_sites_uptime.add_argument('--end', nargs='?', default='', help='select end date of uptime period in form of yyyy-mm-dd')
+    cli_sites_uptime.add_argument('--daily', action='store_true', help='show uptime per day')
+    cli_sites_uptime.add_argument('--monthly', action='store_true', help='show uptime per month')
 
     # statistics
 

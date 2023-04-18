@@ -9,6 +9,7 @@ You can find the full documentation including the feature complete REST API at [
 ## Preconditions
 
  * Make sure to have an account at https://360monitoring.com or https://platform360.io
+ * 360 Monitoring CLI requires a Python version of 3.* or above
 
 ## Install 360 Monitoring CLI as ready-to-use package
 
@@ -35,18 +36,18 @@ You can easily test and run 360 Monitoring CLI for production by running the pre
 
     $ docker run -it --rm ubuntu /bin/bash
     $ apt-get update && apt-get install -y python3 && apt-get install -y pip
-    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.14"
+    $ pip install -i https://test.pypi.org/simple/ --force-reinstall -v "360monitoringcli==1.0.16"
 
 ### For developement, install required Python modules
 
  To test the code locally, install the Python modules "requests", "configparser", "argparse" and "prettytable".
- Create an alias for "360monitoring=./monitoring.py".
+ Use "pip install -e ." to use "360monitoring" command with latest dev build locally based on local code.
 
     $ pip install requests
     $ pip install configparser
     $ pip install argparse
     $ pip install prettytable
-    $ alias 360monitoring="./monitoring.py"
+    $ pip install -e .
 
 #### Run tests to check each function works
 
@@ -54,9 +55,6 @@ Test the code:
 
     $ ./test_cli.sh
 
-Test the deployed CLI package:
-
-    $ ./test_cli.sh "360monitoring"
 ## Usage
 
     $ 360monitoring --help                        display general help
@@ -73,6 +71,7 @@ Test the deployed CLI package:
     $ 360monitoring usertokens list               display user tokens
     $ 360monitoring config print                  display your current settings and where those are stored
     $ 360monitoring recommendations               display upgrade recommendations for servers that exceed their limits
+    $ 360monitoring magiclinks                    create and open a readonly dashboard for a single server only via magic link
     $ 360monitoring wptoolkit                     display statistics of WP Toolkit if installed
 
     $ 360monitoring sites add --url domain.tld    start monitoring a new website

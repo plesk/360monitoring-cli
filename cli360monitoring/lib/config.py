@@ -143,36 +143,36 @@ class Config(object):
         """Print current settings"""
 
         if os.path.isfile(self.filename):
-            print('config file:               ', self.filename)
+            print('config file:'.ljust(30), self.filename)
         else:
-            print(f"config file:                {bcolors.WARNING}" + self.filename + f" does not exist. Please run \"360monitoring config save --api-key YOUR_API_KEY\" to configure.{bcolors.ENDC}")
+            print('config file:'.ljust(30) + f"{bcolors.WARNING}" + self.filename + f" does not exist. Please run \"360monitoring config save --api-key YOUR_API_KEY\" to configure.{bcolors.ENDC}")
 
-        print('CLI version:               ', self.version)
+        print('CLI version:'.ljust(30), self.version)
         print()
         print('Connection')
         print('----------')
-        print('endpoint:                  ', self.endpoint)
+        print('endpoint:'.ljust(30), self.endpoint)
 
         if self.api_key:
-            print('api-key:                   ', self.api_key)
+            print('api-key:'.ljust(30), self.api_key)
         else:
-            print(f"api-key:                    {bcolors.FAIL}No API key specified in " + self.filename + f". Please run \"360monitoring config save --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.{bcolors.ENDC}")
+            print('api-key:'.ljust(30) + f"{bcolors.FAIL}No API key specified in " + self.filename + f". Please run \"360monitoring config save --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.{bcolors.ENDC}")
 
         if self.usertoken:
-            print('usertoken:                 ', self.usertoken)
+            print('usertoken:'.ljust(30), self.usertoken)
         else:
-            print(f"usertoken:                  {bcolors.FAIL}No usertoken specified in " + self.filename + f". Please run \"360monitoring config save --usertoken YOUR_TOKEN\" to use it for creating magic links.{bcolors.ENDC}")
+            print('usertoken:'.ljust(30) + f"{bcolors.FAIL}No usertoken specified in " + self.filename + f". Please run \"360monitoring config save --usertoken YOUR_TOKEN\" to use it for creating magic links.{bcolors.ENDC}")
 
-        print('max items:                 ', self.max_items)
-        print('hide ids:                  ', self.hide_ids)
-        print('debug:                     ', self.debug)
-        print('readonly:                  ', self.readonly)
+        print('max items:'.ljust(30), self.max_items)
+        print('hide ids:'.ljust(30), self.hide_ids)
+        print('debug:'.ljust(30), self.debug)
+        print('readonly:'.ljust(30), self.readonly)
         print()
         print('Thresholds')
         print('----------')
-        print('min-uptime-percent:        ', self.threshold_uptime)
-        print('max-time-to-first-byte:    ', self.threshold_ttfb)
-        print('min-free-diskspace-percent:', self.threshold_free_diskspace)
-        print('max-cpu-usage-percent:     ', self.threshold_cpu_usage)
-        print('max-mem-usage-percent:     ', self.threshold_mem_usage)
-        print('max-disk-usage-percent:    ', self.threshold_disk_usage)
+        print('min-uptime-percent:'.ljust(30), self.threshold_uptime)
+        print('max-time-to-first-byte:'.ljust(30), self.threshold_ttfb)
+        print('min-free-diskspace-percent:'.ljust(30), self.threshold_free_diskspace)
+        print('max-cpu-usage-percent:'.ljust(30), self.threshold_cpu_usage)
+        print('max-mem-usage-percent:'.ljust(30), self.threshold_mem_usage)
+        print('max-disk-usage-percent:'.ljust(30), self.threshold_disk_usage)
