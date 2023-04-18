@@ -146,19 +146,23 @@ class Config(object):
             print('config file:               ', self.filename)
         else:
             print(f"config file:                {bcolors.WARNING}" + self.filename + f" does not exist. Please run \"360monitoring config save --api-key YOUR_API_KEY\" to configure.{bcolors.ENDC}")
+
         print('CLI version:               ', self.version)
         print()
         print('Connection')
         print('----------')
         print('endpoint:                  ', self.endpoint)
+
         if self.api_key:
             print('api-key:                   ', self.api_key)
         else:
             print(f"api-key:                    {bcolors.FAIL}No API key specified in " + self.filename + f". Please run \"360monitoring config save --api-key YOUR_API_KEY\" to connect to your 360 Monitoring account.{bcolors.ENDC}")
+
         if self.usertoken:
             print('usertoken:                 ', self.usertoken)
         else:
             print(f"usertoken:                  {bcolors.FAIL}No usertoken specified in " + self.filename + f". Please run \"360monitoring config save --usertoken YOUR_TOKEN\" to use it for creating magic links.{bcolors.ENDC}")
+
         print('max items:                 ', self.max_items)
         print('hide ids:                  ', self.hide_ids)
         print('debug:                     ', self.debug)
