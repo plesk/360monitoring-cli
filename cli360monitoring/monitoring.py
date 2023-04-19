@@ -24,7 +24,7 @@ from .lib.statistics import Statistics
 from .lib.usertokens import UserTokens
 from .lib.wptoolkit import WPToolkit
 
-__version__ = '1.0.16'
+__version__ = '1.0.17'
 
 # only runs on Python 3.x; throw exception on 2.x
 if sys.version_info[0] < 3:
