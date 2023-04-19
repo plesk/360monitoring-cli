@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 
-import requests
 import json
 from prettytable import PrettyTable
 from datetime import datetime
 
+from .api import apiGet, apiPost, apiDelete
 from .config import Config
 from .functions import printError, printWarn, formatDowntime, formatTimespan
 from .bcolors import bcolors
 
 class Sites(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
         self.monitors = None
         self.format = 'table'
 
-        self.table = PrettyTable()
-        self.table.field_names = ['ID', 'URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location']
+        self.table = PrettyTable(field_names=['ID', 'URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location'])
         self.table.align['ID'] = 'l'
         self.table.align['URL'] = 'l'
         self.table.min_width['URL'] = 25
@@ -37,20 +36,8 @@ class Sites(object):
         if self.monitors != None:
             return True
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return False
-
-        if self.config.debug:
-            print('GET', self.config.endpoint + 'monitors?', self.config.params())
-
-        # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'monitors', params=self.config.params(), headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            # Get list of monitors from response
-            response_json = response.json()
+        response_json = apiGet('monitors', 200, self.config)
+        if response_json:
             if 'monitors' in response_json:
                 self.monitors = response_json['monitors']
                 return True
@@ -59,7 +46,6 @@ class Sites(object):
                 self.monitors = None
                 return False
         else:
-            printError('An error occurred:', response.status_code)
             self.monitors = None
             return False
 
@@ -120,7 +106,6 @@ class Sites(object):
         """Add a monitor for the given URL"""
 
         if url and self.fetchData():
-
             # urls do not include the protocol
             url = url.replace('https://', '').replace('http://', '')
 
@@ -151,25 +136,7 @@ class Sites(object):
                 'name': name,
                 'protocol': protocol
             }
-
-            if self.config.debug:
-                print('POST', self.config.endpoint + 'monitors?', data)
-
-            if self.config.readonly:
-                return False
-
-            response = requests.post(self.config.endpoint + 'monitors',  data=json.dumps(data), headers=self.config.headers())
-
-            # Check status code of response
-            if response.status_code == 200:
-                print('Added site monitor:', url)
-                return True
-            else:
-                printError('Failed to add site monitor', url, 'with response code:', response.status_code)
-                return False
-
-        else:
-            return False
+            apiPost('monitors', self.config, data=data, expectedStatusCode=200, successMessage='Added site monitor: ' + url, errorMessage='Failed to add site monitor ' + url + '')
 
     def remove(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = ''):
         """Remove the monitor for the given URL"""
@@ -188,23 +155,7 @@ class Sites(object):
                     or (location and location in curr_location) \
                     or (pattern and pattern in curr_url):
                     removed += 1
-
-                    if self.config.debug:
-                        print('DELETE', self.config.endpoint + 'monitor/' + curr_id)
-
-                    if self.config.readonly:
-                        return False
-
-                    # Make request to API endpoint
-                    response = requests.delete(self.config.endpoint + 'monitor/' + curr_id, headers=self.config.headers())
-
-                    # Check status code of response
-                    if response.status_code == 204:
-                        print('Removed site monitor:', curr_url, '[', curr_id, ']')
-                        return True
-                    else:
-                        printError('Failed to remove site monitor', curr_url, '[', curr_id, '] with response code:', response.status_code)
-                        return False
+                    apiDelete('monitor/' + curr_id, self.config, expectedStatusCode=204, successMessage='Removed site monitor: ' + curr_url + ' [' + curr_id + ']', errorMessage='Failed to remove site monitor ' + curr_url + ' [' + curr_id + ']')
 
         if removed == 0:
             printWarn('No monitors with given pattern found: id=' + id, 'url=', url, 'name=' + name, 'location=' + location, 'pattern=' + pattern)
@@ -224,42 +175,28 @@ class Sites(object):
     def getUptime(self, siteId: str, startTimestamp: float, endTimestamp: float):
         """Retrieve uptime for the specified site within the specified uptime period"""
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return None
-
         # make sure all parameters are defined
         if not (siteId and startTimestamp > 0 and endTimestamp > 0):
             return None
 
         params = self.config.params()
-        params['start'] = startTimestamp
-        params['end'] = endTimestamp
+        params['start'] = int(startTimestamp)
+        params['end'] = int(endTimestamp)
 
-        if self.config.debug:
-            print('GET', self.config.endpoint + 'monitor/' + siteId + '/uptime?', params)
-
-        # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'monitor/' + siteId + '/uptime?', params=params, headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            # Get uptime from response
-            response_json = response.json()
+        response_json = apiGet('monitor/' + siteId + '/uptime', 200, self.config, params=params)
+        if response_json:
             if 'uptime_percentage' in response_json:
                 return response_json
             else:
                 printWarn('No uptime information available for site', siteId)
                 return None
         else:
-            printError('An error occurred:', response.status_code)
             return None
 
     def listUptimes(self, siteId: str, periods, dateTimeFormat: str = '%Y-%m-%d'):
         """Retrieve uptime for the specified site within the specified uptime periods"""
 
-        table = PrettyTable()
-        table.field_names = ['Uptime in %', 'Period', 'Downtime', 'Events']
+        table = PrettyTable(field_names=['Uptime in %', 'Period', 'Downtime', 'Events'])
         table.align['Uptime in %'] = 'r'
         table.align['Period'] = 'l'
         table.align['Downtime'] = 'l'
@@ -286,7 +223,6 @@ class Sites(object):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
-
             avg_uptime = self.sum_uptime / self.num_monitors if self.sum_uptime > 0 and self.num_monitors > 0 else 0
             avg_ttfb = self.sum_ttfb / self.num_monitors if self.sum_ttfb > 0 and self.num_monitors > 0 else 0
 

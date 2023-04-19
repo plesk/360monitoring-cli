@@ -1,6 +1,5 @@
 # Wishlist for 360 Monitoring CLI
 
-
 * add ability to open the chart for a specific metric via Get Server Metrics
 * add ability to create status pages and remove incidents for status pages, as well as manage incident updates
 

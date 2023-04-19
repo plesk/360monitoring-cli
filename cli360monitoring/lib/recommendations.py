@@ -7,11 +7,10 @@ from .servers import Servers
 
 class Recommendations(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
 
-        self.table = PrettyTable()
-        self.table.field_names = ['Asset', 'Recommendation']
+        self.table = PrettyTable(field_names=['Asset', 'Recommendation'])
         self.table.align['Asset'] = 'l'
         self.table.align['Recommendation'] = 'l'
 

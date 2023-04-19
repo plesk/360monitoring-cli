@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 
-import requests
 import json
 from prettytable import PrettyTable
 
+from .api import apiGet, apiPost, apiDelete
 from .config import Config
 from .functions import printError, printWarn
 
 class Contacts(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
         self.contacts = None
         self.format = 'table'
 
-        self.table = PrettyTable()
-        self.table.field_names = ['ID', 'Name', 'Email', 'Phone', 'Method']
+        self.table = PrettyTable(field_names=['ID', 'Name', 'Email', 'Phone', 'Method'])
         self.table.align['ID'] = 'l'
         self.table.align['Name'] = 'l'
         self.table.align['Email'] = 'l'
@@ -29,20 +28,8 @@ class Contacts(object):
         if self.contacts != None:
             return True
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return False
-
-        if self.config.debug:
-            print('GET', self.config.endpoint + 'contacts?', self.config.params())
-
-        # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'contacts', params=self.config.params(), headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            # Get list of contacts from response
-            response_json = response.json()
+        response_json = apiGet('contacts', 200, self.config)
+        if response_json:
             if 'contacts' in response_json:
                 self.contacts = response_json['contacts']
                 return True
@@ -51,7 +38,6 @@ class Contacts(object):
                 self.contacts = None
                 return False
         else:
-            printError('An error occurred:', response.status_code)
             self.contacts = None
             return False
 
@@ -59,7 +45,6 @@ class Contacts(object):
         """Iterate through list of contacts and print details"""
 
         if self.fetchData():
-
             # if JSON was requested and no filters, then just print it without iterating through
             if (self.format == 'json' and not (id or name or email or phone or limit > 0)):
                 print(json.dumps(self.contacts, indent=4))
@@ -81,11 +66,10 @@ class Contacts(object):
         """Add a contact for the given name"""
 
         if name and self.fetchData():
-
             for contact in self.contacts:
                 if contact['name'] == name:
                     print(name, 'already exists and will not be added')
-                    return False
+                    return
 
             # Make request to API endpoint
             data = {
@@ -95,25 +79,7 @@ class Contacts(object):
                     'sms': sms
                 }
             }
-
-            if self.config.debug:
-                print('POST', self.config.endpoint + 'contacts?', data)
-
-            if self.config.readonly:
-                return False
-
-            response = requests.post(self.config.endpoint + 'contacts',  data=json.dumps(data), headers=self.config.headers())
-
-            # Check status code of response
-            if response.status_code == 200:
-                print('Added contact:', name)
-                return True
-            else:
-                printError('Failed to add contact', name, 'with response code:', response.status_code)
-                return False
-
-        else:
-            return False
+            apiPost('contacts', self.config, data=data, expectedStatusCode=200, successMessage='Added contact \"' + name + '\"', errorMessage='Failed to add contact \"' + name + '\"')
 
     def remove(self, id: str = '', name: str = '', email: str = '', phone: str = ''):
         """Remove the contact for the given name"""
@@ -129,23 +95,8 @@ class Contacts(object):
                     or (name and name == curr_name) \
                     or (email and email == curr_email) \
                     or (phone and phone == curr_phone):
-
-                    if self.config.debug:
-                        print('DELETE', self.config.endpoint + 'contacts/' + curr_id)
-
-                    if self.config.readonly:
-                        return False
-
-                    # Make request to API endpoint
-                    response = requests.delete(self.config.endpoint + 'contact/' + curr_id, headers=self.config.headers())
-
-                    # Check status code of response
-                    if response.status_code == 204:
-                        print('Removed contact:', curr_name, '[', curr_id, ']')
-                        return True
-                    else:
-                        printError('Failed to remove contact', curr_name, '[', curr_id, '] with response code:', response.status_code)
-                        return False
+                    apiDelete('contact/' + curr_id, self.config, expectedStatusCode=204, successMessage='Removed contact \"' + curr_name + '\" [' + curr_id + ']', errorMessage='Failed to remove contact \"' + curr_name + '\" [' + curr_id + ']')
+                    return
 
         printWarn('No contact with given pattern found: id=' + id, 'name=' + name, 'email=' + email, 'phone=' + phone)
 
@@ -153,7 +104,6 @@ class Contacts(object):
         """Print table if table format requested"""
 
         if (self.format == 'table'):
-
             if self.config.hide_ids:
                 self.table.del_column('ID')
 

@@ -19,6 +19,7 @@ from .lib.recommendations import Recommendations
 from .lib.servers import Servers
 from .lib.servernotifications import ServerNotifications
 from .lib.sites import Sites
+from .lib.sitenotifications import SiteNotifications
 from .lib.statistics import Statistics
 from .lib.usertokens import UserTokens
 from .lib.wptoolkit import WPToolkit
@@ -152,11 +153,7 @@ def incidents(args):
 def magiclinks_create(args):
     """Sub command for magiclink create"""
     serverId = ''
-
-    if args.usertoken:
-        usertoken = args.usertoken
-    else:
-        usertoken = cfg.usertoken
+    usertoken = args.usertoken if args.usertoken else cfg.usertoken
 
     if args.id:
         serverId = args.id
@@ -210,7 +207,7 @@ def servers_add(args):
 
 def servers_events(args):
     """Sub command for servers events"""
-    siteId = ''
+    serverId = ''
     startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
     endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
 
@@ -275,6 +272,23 @@ def sites_add(args):
         sites.add(args.url, protocol=args.protocol, name=args.name, force=args.force)
     else:
         print('You need to specify at least a name with --name [name]')
+
+def sites_events(args):
+    """Sub command for sites events"""
+    siteId = ''
+    startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
+    endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
+
+    if args.id:
+        siteId = args.id
+    elif args.url:
+        sites = Sites(cfg)
+        siteId = sites.getSiteId(args.url)
+
+    if siteId:
+        notifications = SiteNotifications(cfg)
+        notifications.format = args.output
+        notifications.list(siteId, startDate.timestamp(), endDate.timestamp(), args.sort, args.reverse, args.limit)
 
 def sites_list(args):
     """Sub command for sites list"""
@@ -379,16 +393,15 @@ def performCLI():
 
     cli_config = subparsers.add_parser('config', help='configure connection to 360 Monitoring account')
     cli_config.set_defaults(func=config)
+    cli_config_subparsers = cli_config.add_subparsers(title='commands', dest='subparser')
 
-    config_subparsers = cli_config.add_subparsers(title='commands', dest='subparser')
-
-    cli_config_print = config_subparsers.add_parser('print', help='print current settings for 360 Monitoring')
+    cli_config_print = cli_config_subparsers.add_parser('print', help='print current settings for 360 Monitoring')
     cli_config_print.set_defaults(func=config_print)
 
-    cli_config_save = config_subparsers.add_parser('save', help='save current settings for 360 Monitoring to ' + cfg.filename)
+    cli_config_save = cli_config_subparsers.add_parser('save', help='save current settings for 360 Monitoring to ' + cfg.filename)
     cli_config_save.set_defaults(func=config_save)
     cli_config_save.add_argument('--api-key', metavar='key', help='specify your API KEY for 360 Monitoring')
-    cli_config_save.add_argument('--usertoken', metavar='usertoken', help='specify your USERTOKEN for 360 Monitoring')
+    cli_config_save.add_argument('--usertoken', metavar='token', help='specify your USERTOKEN for 360 Monitoring')
     cli_config_save.add_argument('--debug', choices=['on', 'off'], type=str, help='switch debug mode to print all API calls on or off')
 
     # contacts
@@ -441,13 +454,13 @@ def performCLI():
 
     cli_incidents_add = cli_incidents_subparsers.add_parser('add', help='add a new incident')
     cli_incidents_add.set_defaults(func=incidents_add)
-    cli_incidents_add.add_argument('--page-id', required=True, metavar='page_id', help='list incidents from status page with given ID')
+    cli_incidents_add.add_argument('--page-id', required=True, metavar='id', help='list incidents from status page with given ID')
     cli_incidents_add.add_argument('--name', required=True, metavar='name', help='name of the new incident')
     cli_incidents_add.add_argument('--body', metavar='body', help='text of the new incident')
 
     cli_incidents_list = cli_incidents_subparsers.add_parser('list', help='list incidents')
     cli_incidents_list.set_defaults(func=incidents_list)
-    cli_incidents_list.add_argument('--page-id', required=True, metavar='page_id', help='list incidents from status page with given ID')
+    cli_incidents_list.add_argument('--page-id', required=True, metavar='id', help='list incidents from status page with given ID')
     cli_incidents_list.add_argument('--name', nargs='?', default='', metavar='name', help='list incidents with given name')
 
     cli_incidents_list.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
@@ -457,7 +470,7 @@ def performCLI():
 
     cli_incidents_remove = cli_incidents_subparsers.add_parser('remove', help='remove an incident')
     cli_incidents_remove.set_defaults(func=incidents_remove)
-    cli_incidents_remove.add_argument('--page-id', required=True, metavar='page_id', help='remove incidents from status page with given ID')
+    cli_incidents_remove.add_argument('--page-id', required=True, metavar='id', help='remove incidents from status page with given ID')
     cli_incidents_remove.add_argument('--id', nargs='?', default='', metavar='id', help='remove incident with given ID')
     cli_incidents_remove.add_argument('--name', nargs='?', default='', metavar='name', help='remove incident with given name')
 
@@ -471,7 +484,7 @@ def performCLI():
     cli_magiclinks_create.set_defaults(func=magiclinks_create)
     cli_magiclinks_create.add_argument('--id', nargs='?', default='', metavar='id', help='create magic link for server with given ID')
     cli_magiclinks_create.add_argument('--name', nargs='?', default='', metavar='name', help='create magic link for server with given name')
-    cli_magiclinks_create.add_argument('--usertoken', nargs='?', default='', metavar='usertoken', help='use this usertoken for authentication')
+    cli_magiclinks_create.add_argument('--usertoken', nargs='?', default='', metavar='token', help='use this usertoken for authentication')
     cli_magiclinks_create.add_argument('--open', action='store_true', help='open the server dashboard directly in the default web browser (optional)')
 
     # recommendations
@@ -495,8 +508,8 @@ def performCLI():
     cli_servers_events.set_defaults(func=servers_events)
     cli_servers_events.add_argument('--id', nargs='?', default='', metavar='id', help='show event notifications for server with given ID')
     cli_servers_events.add_argument('--name', nargs='?', default='', metavar='name', help='show event notifications for server with given name')
-    cli_servers_events.add_argument('--start', nargs='?', default='', help='select start date of notification period in form of yyyy-mm-dd')
-    cli_servers_events.add_argument('--end', nargs='?', default='', help='select end date of notification period in form of yyyy-mm-dd')
+    cli_servers_events.add_argument('--start', nargs='?', default='', metavar='start', help='select start date of notification period in form of yyyy-mm-dd')
+    cli_servers_events.add_argument('--end', nargs='?', default='', metavar='end', help='select end date of notification period in form of yyyy-mm-dd')
 
     cli_servers_events.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
     cli_servers_events.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
@@ -554,6 +567,23 @@ def performCLI():
     cli_sites_add.add_argument('--force', action='store_true', help='add new monitor even if already exists')
     cli_sites_add.add_argument('--file', nargs='?', default='', metavar='file', help='file containing one URL per line to monitor')
 
+    cli_sites_events = cli_sites_subparsers.add_parser('events', help='list event notifications of a specified site')
+    cli_sites_events.set_defaults(func=sites_events)
+    cli_sites_events.add_argument('--id', nargs='?', default='', metavar='id', help='show event notifications for site with given ID')
+    cli_sites_events.add_argument('--url', nargs='?', default='', metavar='url', help='show event notifications for site with given url')
+    cli_sites_events.add_argument('--start', nargs='?', default='', metavar='start', help='select start date of notification period in form of yyyy-mm-dd')
+    cli_sites_events.add_argument('--end', nargs='?', default='', metavar='end', help='select end date of notification period in form of yyyy-mm-dd')
+
+    cli_sites_events.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_sites_events.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_sites_events.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_sites_events.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
+    cli_sites_events.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
+    cli_sites_events.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
+    cli_sites_events.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
+    cli_sites_events.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
+
     cli_sites_list = cli_sites_subparsers.add_parser('list', help='list sites')
     cli_sites_list.set_defaults(func=sites_list)
     cli_sites_list.add_argument('--id', nargs='?', default='', metavar='id', help='list site with given ID')
@@ -583,11 +613,11 @@ def performCLI():
 
     cli_sites_uptime = cli_sites_subparsers.add_parser('uptime', help='show uptime')
     cli_sites_uptime.set_defaults(func=sites_uptime)
-    cli_sites_uptime.add_argument('--id', nargs='?', default='', help='show uptime for site with given ID')
-    cli_sites_uptime.add_argument('--url', nargs='?', default='', help='show uptime for site with given url')
-    cli_sites_uptime.add_argument('--name', nargs='?', default='', help='show uptime for site with given name')
-    cli_sites_uptime.add_argument('--start', nargs='?', default='', help='select start date of uptime period in form of yyyy-mm-dd')
-    cli_sites_uptime.add_argument('--end', nargs='?', default='', help='select end date of uptime period in form of yyyy-mm-dd')
+    cli_sites_uptime.add_argument('--id', nargs='?', default='', metavar='id', help='show uptime for site with given ID')
+    cli_sites_uptime.add_argument('--url', nargs='?', default='', metavar='url', help='show uptime for site with given url')
+    cli_sites_uptime.add_argument('--name', nargs='?', default='', metavar='name', help='show uptime for site with given name')
+    cli_sites_uptime.add_argument('--start', nargs='?', default='', metavar='start', help='select start date of uptime period in form of yyyy-mm-dd')
+    cli_sites_uptime.add_argument('--end', nargs='?', default='', metavar='end', help='select end date of uptime period in form of yyyy-mm-dd')
     cli_sites_uptime.add_argument('--daily', action='store_true', help='show uptime per day')
     cli_sites_uptime.add_argument('--monthly', action='store_true', help='show uptime per month')
 

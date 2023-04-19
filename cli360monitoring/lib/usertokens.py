@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
-import requests
 import json
 from prettytable import PrettyTable
 
+from .api import apiGet, apiPost
 from .config import Config
 from .functions import printError, printWarn
 
 class UserTokens(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
         self.usertokens = None
 
-        self.table = PrettyTable()
-        self.table.field_names = ['Token', 'Name', 'Tags']
+        self.table = PrettyTable(field_names=['Token', 'Name', 'Tags'])
         self.table.align['Token'] = 'l'
         self.table.align['Name'] = 'l'
         self.table.align['Tags'] = 'l'
@@ -26,20 +25,8 @@ class UserTokens(object):
         if self.usertokens != None:
             return True
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return False
-
-        if self.config.debug:
-            print('GET', self.config.endpoint + 'usertoken?', self.config.params())
-
-        # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'usertoken', params=self.config.params(), headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            # Get list of usertokens from response
-            response_json = response.json()
+        response_json = apiGet('usertoken', 200, self.config)
+        if response_json:
             if 'tokens' in response_json:
                 self.usertokens = response_json['tokens']
                 return True
@@ -48,7 +35,6 @@ class UserTokens(object):
                 self.usertokens = None
                 return False
         else:
-            printError('An error occurred:', response.status_code)
             self.usertokens = None
             return False
 
@@ -85,31 +71,12 @@ class UserTokens(object):
     def create(self, name: str = '', tags: str = ''):
         """Create a new usertoken"""
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return False
+        data = {
+            'name': name,
+            'tags': tags
+        }
 
-        if self.config.debug:
-            print('POST', self.config.endpoint + 'usertoken', self.config.params())
-
-        if self.config.readonly:
-            return False
-
-        parameters = ''
-        if name and tags:
-            parameters = 'name=' + name + '&tags=' + tags
-        elif name:
-            parameters = 'name=' + name
-
-        response = requests.post(self.config.endpoint + 'usertoken', data=parameters, headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            print('Created usertoken')
-            return True
-        else:
-            printError('Failed to create usertoken with response code:', response.status_code)
-            return False
+        return apiPost('usertoken', self.config, data=data, expectedStatusCode=200, successMessage='Created usertoken', errorMessage='Failed to create usertoken')
 
     def print(self, usertoken, format: str = 'table'):
         """Print the data of the specified usertoken"""
@@ -124,9 +91,6 @@ class UserTokens(object):
         tags = ''
         if 'tags' in usertoken and usertoken['tags']:
             for tag in usertoken['tags']:
-                if tags:
-                    tags += ', ' + tag
-                else:
-                    tags = tag
+                tags += ', ' + tag
 
-        self.table.add_row([token, name, tags])
+        self.table.add_row([token, name, tags.lstrip(', ')])

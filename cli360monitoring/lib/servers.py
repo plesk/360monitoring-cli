@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 
-import requests
 import json
 from prettytable import PrettyTable
 
+from .api import apiGet, apiPut
 from .config import Config
 from .functions import printError, printWarn
 from .bcolors import bcolors
 
 class Servers(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
         self.servers = None
         self.format = 'table'
 
-        self.table = PrettyTable()
-        self.table.field_names = ['ID', 'Server name', 'IP Address', 'Status', 'OS', 'CPU Usage %', 'Mem Usage %', 'Disk Usage %', 'Disk Info', 'Tags']
+        self.table = PrettyTable(field_names=['ID', 'Server name', 'IP Address', 'Status', 'OS', 'CPU Usage %', 'Mem Usage %', 'Disk Usage %', 'Disk Info', 'Tags'])
         self.table.align['ID'] = 'l'
         self.table.align['Server name'] = 'l'
         self.table.min_width['Server name'] = 24
@@ -34,20 +33,8 @@ class Servers(object):
         if self.servers != None:
             return True
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return False
-
-        if self.config.debug:
-            print('GET', self.config.endpoint + 'servers?', self.config.params(tags))
-
-        # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'servers', params=self.config.params(tags), headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            # Get list of servers from response
-            response_json = response.json()
+        response_json = apiGet('servers', 200, self.config, self.config.params(tags))
+        if response_json:
             if 'servers' in response_json:
                 self.servers = response_json['servers']
                 return True
@@ -56,7 +43,6 @@ class Servers(object):
                 self.servers = None
                 return False
         else:
-            printError('An error occurred:', response.status_code)
             self.servers = None
             return False
 
@@ -66,23 +52,7 @@ class Servers(object):
         data = {
             "tags": tags
         }
-
-        if self.config.debug:
-            print('PUT', self.config.endpoint + 'server/' + serverId + '?', data)
-
-        if self.config.readonly:
-            return False
-
-        # Make request to API endpoint
-        response = requests.put(self.config.endpoint + 'server/' + serverId,  data=json.dumps(data), headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            print('Updated tags of server', serverId, 'to', tags)
-            return True
-        else:
-            printError('Failed to update server', serverId, 'with response code:', response.status_code)
-            return False
+        apiPut('server/' + serverId, self.config, data=data, expectedStatusCode=200, successMessage='Updated tags of server ' + serverId + ' to ' + tags, errorMessage='Failed to update server ' + serverId)
 
     def list(self, issuesOnly: bool, sort: str, reverse: bool, limit: int, tags):
         """Iterate through list of server monitors and print details"""

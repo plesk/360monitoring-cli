@@ -7,16 +7,14 @@ from .servers import Servers
 from .sites import Sites
 from .contacts import Contacts
 from .usertokens import UserTokens
-from .functions import printError, printWarn
 from .bcolors import bcolors
 
 class Statistics(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
 
-        self.table = PrettyTable()
-        self.table.field_names = ['Value', 'Metric']
+        self.table = PrettyTable(field_names=['Value', 'Metric'])
         self.table.align['Value'] = 'r'
         self.table.align['Metric'] = 'l'
 

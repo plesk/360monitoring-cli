@@ -7,11 +7,10 @@ from .servers import Servers
 
 class WPToolkit(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
 
-        self.table = PrettyTable()
-        self.table.field_names = ['ID', 'Server name', 'WP sites', 'Alive', 'Outdated', 'Outdated PHP', 'Broken']
+        self.table = PrettyTable(field_names=['ID', 'Server name', 'WP sites', 'Alive', 'Outdated', 'Outdated PHP', 'Broken'])
         self.table.align['ID'] = 'l'
         self.table.align['Server name'] = 'l'
         self.table.min_width['Server name'] = 24

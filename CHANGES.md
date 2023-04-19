@@ -1,7 +1,11 @@
+# 1.0.17
+
+* [*] Added ability to list site event notifications (alerts) for a specified website.
+
 # 1.0.16
 
 * [*] Added ability to calculate and print the uptime for a specified site for a custom time period or the last 24 hours, 1 week, 30 days, a quarter or a year.
-* [*] Added ability to print the daily or monthly average uptime in a table for the specified time period or the total time span available (for each month since start)
+* [*] Added ability to print the daily or monthly average uptime in a table for the specified time period or the total time span available (for each month since start).
 * [*] Added ability to list server event notifications (alerts) for a specified server.
 
 # 1.0.14

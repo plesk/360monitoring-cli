@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 
-import requests
 import json
 from datetime import datetime
 from prettytable import PrettyTable
 
+from .api import apiGet, apiPost, apiDelete
 from .config import Config
 from .functions import printError, printWarn
 
 class Incidents(object):
 
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
         self.incidents = None
         self.format = 'table'
 
-        self.table = PrettyTable()
-        self.table.field_names = ['ID', 'Name', 'Body', 'Status', 'Timestamp']
+        self.table = PrettyTable(field_names=['ID', 'Name', 'Body', 'Status', 'Timestamp'])
         self.table.align['ID'] = 'l'
         self.table.align['Name'] = 'l'
         self.table.align['Body'] = 'l'
@@ -30,20 +29,8 @@ class Incidents(object):
         if self.incidents != None:
             return True
 
-        # check if headers are correctly set for authorization
-        if not self.config.headers():
-            return False
-
-        if self.config.debug:
-            print('GET', self.config.endpoint + 'page/' + page_id + '/incidents', self.config.params())
-
-        # Make request to API endpoint
-        response = requests.get(self.config.endpoint + 'page/' + page_id + '/incidents', params=self.config.params(), headers=self.config.headers())
-
-        # Check status code of response
-        if response.status_code == 200:
-            # Get list of incidents from response
-            response_json = response.json()
+        response_json = apiGet('page/' + page_id + '/incidents', 200, self.config)
+        if response_json:
             if 'incidents' in response_json:
                 self.incidents = response_json['incidents']
                 return True
@@ -52,7 +39,6 @@ class Incidents(object):
                 self.incidents = None
                 return False
         else:
-            printError('An error occurred:', response.status_code)
             self.incidents = None
             return False
 
@@ -80,7 +66,6 @@ class Incidents(object):
         """Add a incident for the given name"""
 
         if page_id and name:
-
             if self.fetchData(page_id) and self.incidents:
                 for incident in self.incidents:
                     if incident['name'] == name and incident['body'] == body:
@@ -92,25 +77,7 @@ class Incidents(object):
                 'name': name,
                 'body': body
             }
-
-            if self.config.debug:
-                print('POST', self.config.endpoint + 'page/' + page_id + '/incidents', data)
-
-            if self.config.readonly:
-                return False
-
-            response = requests.post(self.config.endpoint + 'page/' + page_id + '/incidents',  data=json.dumps(data), headers=self.config.headers())
-
-            # Check status code of response
-            if response.status_code == 204:
-                print('Added incident:', name)
-                return True
-            else:
-                printError('Failed to add incident', name, 'to page', page_id, 'with response code:', response.status_code)
-                return False
-
-        else:
-            return False
+            apiPost('page/' + page_id + '/incidents', self.config, data=data, expectedStatusCode=204, successMessage='Added incident: ' + name, errorMessage='Failed to add incident \"' + name + '\" to page \"' + page_id + '\"')
 
     def remove(self, page_id: str, id: str = '', name: str = ''):
         """Remove the incident for the given name"""
@@ -123,25 +90,10 @@ class Incidents(object):
 
                 if (id and id == curr_id) \
                     or (name and name == curr_name):
+                    apiDelete('page/' + page_id + '/incident/' + curr_id + '/' + curr_update_id, self.config, expectedStatusCode=204, successMessage='Removed incident: ' + curr_name + ' [' + curr_id + ']', errorMessage='Failed to remove incident \"' + curr_name + '\" [' + curr_id + '] from page \"' + page_id + '\"')
+                    return
 
-                    if self.config.debug:
-                        print('DELETE', self.config.endpoint + 'page/' + page_id + '/incident/' + curr_id + '/' + curr_update_id)
-
-                    if self.config.readonly:
-                        return False
-
-                    # Make request to API endpoint
-                    response = requests.delete(self.config.endpoint + 'page/' + page_id + '/incident/' + curr_id + '/' + curr_update_id, headers=self.config.headers())
-
-                    # Check status code of response
-                    if response.status_code == 204:
-                        print('Removed incident:', curr_name, '[', curr_id, ']')
-                        return True
-                    else:
-                        printError('Failed to remove incident', curr_name, '[', curr_id, '] from page \'' + page_id + '\' with response code:', response.status_code)
-                        return False
-
-        printWarn('No incident with given pattern found on page \'' + page_id + '\': id=' + id, 'name=' + name)
+        printWarn('No incident with given pattern found on page \"' + page_id + '\": id=' + id, 'name=' + name)
 
     def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0):
         """Print table if table format requested"""

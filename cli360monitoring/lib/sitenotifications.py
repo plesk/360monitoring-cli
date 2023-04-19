@@ -8,7 +8,7 @@ from .api import apiGet
 from .config import Config
 from .functions import printError, printWarn
 
-class ServerNotifications(object):
+class SiteNotifications(object):
 
     def __init__(self, config: Config):
         self.config = config
@@ -21,8 +21,8 @@ class ServerNotifications(object):
         self.table.align['Status'] = 'c'
         self.table.align['Summary'] = 'l'
 
-    def fetchData(self, serverId: str, startTimestamp: float, endTimestamp: float):
-        """Retrieve a list of all alerts of a specified server in the specified time period"""
+    def fetchData(self, siteId: str, startTimestamp: float, endTimestamp: float):
+        """Retrieve a list of all alerts of a specified site in the specified time period"""
 
         # if data is already downloaded, use cached data
         if self.notifications != None:
@@ -32,30 +32,30 @@ class ServerNotifications(object):
         params['start'] = int(startTimestamp)
         params['end'] = int(endTimestamp)
 
-        response_json = apiGet('server/' + serverId + '/notifications', 200, self.config, params)
+        response_json = apiGet('monitor/' + siteId + '/notifications', 200, self.config, params)
         if response_json:
             if 'data' in response_json:
                 self.notifications = response_json['data']
                 return True
             else:
-                printWarn('No notifications found for server', serverId)
+                printWarn('No notifications found for site', siteId)
                 self.notifications = None
                 return False
         else:
             self.notifications = None
             return False
 
-    def list(self, serverId: str, startTimestamp: float, endTimestamp: float, sort: str = '', reverse: bool = False, limit: int = 0):
-        """Iterate through list of server notifications and print details"""
+    def list(self, siteId: str, startTimestamp: float, endTimestamp: float, sort: str = '', reverse: bool = False, limit: int = 0):
+        """Iterate through list of site notifications and print details"""
 
-        if self.fetchData(serverId, startTimestamp, endTimestamp):
+        if self.fetchData(siteId, startTimestamp, endTimestamp):
 
             # if JSON was requested and no filters, then just print it without iterating through
             if self.format == 'json':
                 print(json.dumps(self.notifications, indent=4))
                 return
 
-            # Iterate through list of servers and print data, etc.
+            # Iterate through list of sites and print data, etc.
             for notification in self.notifications:
                 self.print(notification)
 
