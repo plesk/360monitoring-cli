@@ -10,10 +10,10 @@ from .bcolors import bcolors
 
 class Servers(object):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, format: str = 'table'):
         self.config = config
+        self.format = format
         self.servers = None
-        self.format = 'table'
 
         self.table = PrettyTable(field_names=['ID', 'Server name', 'IP Address', 'Status', 'OS', 'CPU Usage %', 'Mem Usage %', 'Disk Usage %', 'Disk Info', 'Tags'])
         self.table.align['ID'] = 'l'

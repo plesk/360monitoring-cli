@@ -1,3 +1,8 @@
+# 1.0.18
+
+* [*] Added ability to list all monitoring locations (nodes).
+* [*] Added ability to create and open a specific server metric chart as PNG file available via URL.
+
 # 1.0.17
 
 * [*] Added ability to list site event notifications (alerts) for a specified website.

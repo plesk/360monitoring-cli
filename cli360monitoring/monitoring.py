@@ -15,8 +15,10 @@ from .lib.config import Config
 from .lib.contacts import Contacts
 from .lib.incidents import Incidents
 from .lib.magiclinks import MagicLinks
+from .lib.nodes import Nodes
 from .lib.recommendations import Recommendations
 from .lib.servers import Servers
+from .lib.servercharts import ServerCharts
 from .lib.servernotifications import ServerNotifications
 from .lib.sites import Sites
 from .lib.sitenotifications import SiteNotifications
@@ -24,7 +26,7 @@ from .lib.statistics import Statistics
 from .lib.usertokens import UserTokens
 from .lib.wptoolkit import WPToolkit
 
-__version__ = '1.0.17'
+__version__ = '1.0.18'
 
 # only runs on Python 3.x; throw exception on 2.x
 if sys.version_info[0] < 3:
@@ -107,8 +109,7 @@ def contacts_add(args):
 def contacts_list(args):
     """Sub command for contacts list"""
     check_columns(args.columns)
-    contacts = Contacts(cfg)
-    contacts.format = args.output
+    contacts = Contacts(cfg, format=args.output)
     contacts.list(id=args.id, name=args.name, email=args.email, phone=args.phone, sort=args.sort, reverse=args.reverse, limit=args.limit)
 
 def contacts_remove(args):
@@ -135,8 +136,7 @@ def incidents_add(args):
 
 def incidents_list(args):
     """Sub command for incidents list"""
-    incidents = Incidents(cfg)
-    incidents.format = args.output
+    incidents = Incidents(cfg, format=args.output)
     incidents.list(page_id=args.page_id, name=args.name)
 
 def incidents_remove(args):
@@ -180,6 +180,14 @@ def magiclinks(args):
     """Sub command for magiclink"""
     cli_subcommands[args.subparser].print_help()
 
+# --- nodes functions ---
+
+def nodes(args):
+    """Sub command for nodes"""
+    check_columns(args.columns)
+    nodes = Nodes(cfg, format=args.output)
+    nodes.list(id=args.id, name=args.name, sort=args.sort, reverse=args.reverse, limit=args.limit)
+
 # --- recommendations functions ---
 
 def recommendations(args):
@@ -205,11 +213,39 @@ def servers_add(args):
     print()
     print('wget -q -N monitoring.platform360.io/agent360.sh && bash agent360.sh', token)
 
+# --- magiclink functions ---
+
+def servers_charts(args):
+    """Sub command for servers charts"""
+    cli_subcommands[args.subparser].print_help()
+
+def servers_charts_create(args):
+    """Sub command for servers charts"""
+    serverId = ''
+    startDate = datetime.strptime(args.start.strip('\"'), '%Y-%m-%d').timestamp() if args.start else 0
+    endDate = datetime.strptime(args.end.strip('\"'), '%Y-%m-%d').timestamp() if args.end else 0
+
+    if args.id:
+        serverId = args.id
+    elif args.name:
+        # find correct server id for the server with the specified name
+        servers = Servers(cfg)
+        serverId = servers.getServerId(args.name)
+
+    if serverId:
+        charts = ServerCharts(cfg)
+        chart_url = charts.create(serverId, args.metric, startDate, endDate)
+
+        if chart_url and args.open:
+            webbrowser.open(chart_url)
+    else:
+        print('Please specify an existing server either by "--id id" or "--name hostname"')
+
 def servers_events(args):
     """Sub command for servers events"""
     serverId = ''
-    startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
-    endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
+    startDate = datetime.strptime(args.start.strip('\"'), '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
+    endDate = datetime.strptime(args.end.strip('\"'), '%Y-%m-%d') if args.end else datetime.now()
 
     if args.id:
         serverId = args.id
@@ -218,15 +254,13 @@ def servers_events(args):
         serverId = servers.getServerId(args.name)
 
     if serverId:
-        notifications = ServerNotifications(cfg)
-        notifications.format = args.output
+        notifications = ServerNotifications(cfg, format=args.output)
         notifications.list(serverId, startDate.timestamp(), endDate.timestamp(), args.sort, args.reverse, args.limit)
 
 def servers_list(args):
     """Sub command for servers list"""
     check_columns(args.columns)
-    servers = Servers(cfg)
-    servers.format = args.output
+    servers = Servers(cfg, format=args.output)
     servers.list(args.issues, args.sort, args.reverse, args.limit, args.tag)
 
 def servers_remove(args):
@@ -276,8 +310,8 @@ def sites_add(args):
 def sites_events(args):
     """Sub command for sites events"""
     siteId = ''
-    startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
-    endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
+    startDate = datetime.strptime(args.start.strip('\"'), '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
+    endDate = datetime.strptime(args.end.strip('\"'), '%Y-%m-%d') if args.end else datetime.now()
 
     if args.id:
         siteId = args.id
@@ -286,15 +320,13 @@ def sites_events(args):
         siteId = sites.getSiteId(args.url)
 
     if siteId:
-        notifications = SiteNotifications(cfg)
-        notifications.format = args.output
+        notifications = SiteNotifications(cfg, format=args.output)
         notifications.list(siteId, startDate.timestamp(), endDate.timestamp(), args.sort, args.reverse, args.limit)
 
 def sites_list(args):
     """Sub command for sites list"""
     check_columns(args.columns)
-    sites = Sites(cfg)
-    sites.format = args.output
+    sites = Sites(cfg, format=args.output)
     sites.list(id=args.id, url=args.url, name=args.name, location=args.location, pattern=args.pattern, issuesOnly=args.issues, sort=args.sort, reverse=args.reverse, limit=args.limit)
 
 def sites_remove(args):
@@ -305,8 +337,8 @@ def sites_remove(args):
 def sites_uptime(args):
     """Sub command for sites uptime"""
     siteId = ''
-    startDate = datetime.strptime(args.start, '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
-    endDate = datetime.strptime(args.end, '%Y-%m-%d') if args.end else datetime.now()
+    startDate = datetime.strptime(args.start.strip('\"'), '%Y-%m-%d') if args.start else (datetime.today() - timedelta(days=365))
+    endDate = datetime.strptime(args.end.strip('\"'), '%Y-%m-%d') if args.end else datetime.now()
     sites = Sites(cfg)
 
     if args.id:
@@ -487,6 +519,23 @@ def performCLI():
     cli_magiclinks_create.add_argument('--usertoken', nargs='?', default='', metavar='token', help='use this usertoken for authentication')
     cli_magiclinks_create.add_argument('--open', action='store_true', help='open the server dashboard directly in the default web browser (optional)')
 
+    # nodes
+
+    cli_nodes = subparsers.add_parser('nodes', help='show monitoring locations')
+    cli_nodes.set_defaults(func=nodes)
+    cli_nodes.add_argument('--id', nargs='?', default='', metavar='id', help='show node with given ID')
+    cli_nodes.add_argument('--name', nargs='?', default='', metavar='name', help='show node with given name')
+
+    cli_nodes.add_argument('--columns', nargs='*', default='', metavar='col', help='specify columns to print in table view or remove columns with 0 as prefix e.g. "0id"')
+    cli_nodes.add_argument('--sort', nargs='?', default='', metavar='col', help='sort by specified column. Reverse sort by adding --reverse')
+    cli_nodes.add_argument('--reverse', action='store_true', help='show in descending order. Works only together with --sort')
+    cli_nodes.add_argument('--limit', nargs='?', default=0, type=int, metavar='n', help='limit the number of printed items')
+
+    cli_nodes.add_argument('--output', choices=['json', 'csv', 'table'], default='table', help='output format for the data')
+    cli_nodes.add_argument('--json', action='store_const', const='json', dest='output', help='print data in JSON format')
+    cli_nodes.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
+    cli_nodes.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
+
     # recommendations
 
     cli_recommendations = subparsers.add_parser('recommendations', help='show upgrade recommendations for servers that exceed their limits')
@@ -503,6 +552,18 @@ def performCLI():
 
     cli_servers_add = cli_servers_subparsers.add_parser('add', help='activate monitoring for a server')
     cli_servers_add.set_defaults(func=servers_add)
+
+    cli_servers_charts = cli_servers_subparsers.add_parser('charts', help='create a metrics chart as PNG file and print its url or open it in your browser')
+    cli_servers_charts.set_defaults(func=servers_charts)
+    cli_servers_charts_subparsers = cli_servers_charts.add_subparsers(title='commands', dest='subparser')
+    cli_servers_charts_create = cli_servers_charts_subparsers.add_parser('create', help='create a metrics chart as PNG file and print its url or open it in your browser')
+    cli_servers_charts_create.set_defaults(func=servers_charts_create)
+    cli_servers_charts_create.add_argument('--id', nargs='?', default='', metavar='id', help='show metrics for server with given ID')
+    cli_servers_charts_create.add_argument('--name', nargs='?', default='', metavar='name', help='show metrics for server with given name')
+    cli_servers_charts_create.add_argument('--metric', nargs='?', default='cpu', metavar='metric', help='select the metric to chart, e.g. \"cpu\", \"mem\", \"nginx\", \"bitninja\", \"httpd\", \"network\", \"ping\", \"process\", \"swap\", \"uptime\", \"wp-toolkit\" (optional)')
+    cli_servers_charts_create.add_argument('--start', nargs='?', default='', metavar='start', help='select start date of chart period in form of \"yyyy-mm-dd\" (optional)')
+    cli_servers_charts_create.add_argument('--end', nargs='?', default='', metavar='end', help='select end date of chart period in form of \"yyyy-mm-dd\" (optional)')
+    cli_servers_charts_create.add_argument('--open', action='store_true', help='open the metrics chart directly in the default web browser (optional)')
 
     cli_servers_events = cli_servers_subparsers.add_parser('events', help='list event notifications of a specified server')
     cli_servers_events.set_defaults(func=servers_events)
@@ -669,6 +730,7 @@ def performCLI():
     cli_subcommands['dashboard'] = cli_dashboard
     cli_subcommands['incidents'] = cli_incidents
     cli_subcommands['magiclinks'] = cli_magiclinks
+    cli_subcommands['nodes'] = cli_nodes
     cli_subcommands['recommendations'] = cli_recommendations
     cli_subcommands['servers'] = cli_servers
     cli_subcommands['signup'] = cli_signup
@@ -682,7 +744,7 @@ def performCLI():
         if args.version:
             print('360 Monitoring CLI Version:', __version__)
         elif 'func' in args:
-            # recommendations, statistics, signup, wptoolkit and dashboard is shown directly without subparser
+            # nodes, recommendations, statistics, signup, wptoolkit and dashboard is shown directly without subparser
             if args.func == config:
                 cli_config.print_help()
             elif args.func == contacts:
@@ -693,6 +755,8 @@ def performCLI():
                 cli_magiclinks.print_help()
             elif args.func == servers:
                 cli_servers.print_help()
+            elif args.func == servers_charts:
+                cli_servers_charts.print_help()
             elif args.func == sites:
                 cli_sites.print_help()
             elif args.func == usertokens:

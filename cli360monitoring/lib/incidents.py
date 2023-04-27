@@ -10,10 +10,10 @@ from .functions import printError, printWarn
 
 class Incidents(object):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, format: str = 'table'):
         self.config = config
+        self.format = format
         self.incidents = None
-        self.format = 'table'
 
         self.table = PrettyTable(field_names=['ID', 'Name', 'Body', 'Status', 'Timestamp'])
         self.table.align['ID'] = 'l'

@@ -11,10 +11,10 @@ from .bcolors import bcolors
 
 class Sites(object):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, format: str = 'table'):
         self.config = config
+        self.format = format
         self.monitors = None
-        self.format = 'table'
 
         self.table = PrettyTable(field_names=['ID', 'URL', 'Status', 'Uptime %', 'Time to first Byte', 'Location'])
         self.table.align['ID'] = 'l'

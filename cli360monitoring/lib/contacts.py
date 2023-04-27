@@ -9,10 +9,10 @@ from .functions import printError, printWarn
 
 class Contacts(object):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, format: str = 'table'):
         self.config = config
+        self.format = format
         self.contacts = None
-        self.format = 'table'
 
         self.table = PrettyTable(field_names=['ID', 'Name', 'Email', 'Phone', 'Method'])
         self.table.align['ID'] = 'l'

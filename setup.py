@@ -11,7 +11,7 @@ install_requires = ['configparser', 'prettytable', 'requests']
 
 setuptools.setup(
     name='360monitoringcli',
-    version='1.0.17',
+    version='1.0.18',
     description='360 Monitoring CLI',
     long_description_content_type='text/markdown',
     long_description=readme,

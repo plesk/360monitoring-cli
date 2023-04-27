@@ -10,9 +10,9 @@ from .functions import printError, printWarn
 
 class SiteNotifications(object):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, format: str = 'table'):
         self.config = config
-        self.format = 'table'
+        self.format = format
         self.notifications = None
 
         self.table = PrettyTable(field_names=['Start', 'End', 'Status', 'Summary'])
