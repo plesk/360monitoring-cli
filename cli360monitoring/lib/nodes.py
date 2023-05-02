@@ -57,6 +57,17 @@ class Nodes(object):
 
             self.printFooter(sort=sort, reverse=reverse, limit=limit)
 
+    def getNodeId(self, name: str):
+        """Return Node Id for the location with the specified name. Only the first matching entry (exact match) is returned or empty string if not found"""
+
+        if name and self.fetchData():
+            # Iterate through list of nodes and find the specified one
+            for node in self.nodes:
+                if name in node['pretty_name']:
+                    return node['id']
+
+        return ''
+
     def printFooter(self, sort: str = '', reverse: bool = False, limit: int = 0):
         """Print table if table format requested"""
 

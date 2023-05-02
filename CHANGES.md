@@ -1,3 +1,8 @@
+# 1.0.19
+
+* [*] Added ability to fetch all Site Metrics as JSON. Creating charts as PNG link for servers is not yet supported.
+* [*] Added many more options for adding a new site monitor: e.g. from which monitoring location to monitor, keyword alerts, different protocols and ports, ...
+
 # 1.0.18
 
 * [*] Added ability to list all monitoring locations (nodes).

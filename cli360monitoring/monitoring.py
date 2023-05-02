@@ -21,12 +21,13 @@ from .lib.servers import Servers
 from .lib.servercharts import ServerCharts
 from .lib.servernotifications import ServerNotifications
 from .lib.sites import Sites
+from .lib.sitecharts import SiteCharts
 from .lib.sitenotifications import SiteNotifications
 from .lib.statistics import Statistics
 from .lib.usertokens import UserTokens
 from .lib.wptoolkit import WPToolkit
 
-__version__ = '1.0.18'
+__version__ = '1.0.19'
 
 # only runs on Python 3.x; throw exception on 2.x
 if sys.version_info[0] < 3:
@@ -213,8 +214,6 @@ def servers_add(args):
     print()
     print('wget -q -N monitoring.platform360.io/agent360.sh && bash agent360.sh', token)
 
-# --- magiclink functions ---
-
 def servers_charts(args):
     """Sub command for servers charts"""
     cli_subcommands[args.subparser].print_help()
@@ -293,19 +292,52 @@ def signup(args):
 def sites_add(args):
     """Sub command for sites add"""
     sites = Sites(cfg)
+    nodeId = ''
+
+    if args.node_id:
+        nodeId = args.node_id
+    elif args.node_name:
+        nodes = Nodes(cfg)
+        nodeId = nodes.getNodeId(args.node_name)
 
     if args.file:
         if os.path.isfile(args.file):
             with open(args.file) as file:
                 lines = file.readlines()
                 for line in lines:
-                    sites.add(line.strip())
+                    sites.add(line.strip(), protocol=args.protocol, name=args.name, port=args.port, keyword=args.keyword, matchType=args.match_type, nodeId=nodeId, force=args.force)
         else:
             print('ERROR: File', args.file, 'to import not found')
     elif args.url:
-        sites.add(args.url, protocol=args.protocol, name=args.name, force=args.force)
+        sites.add(args.url, protocol=args.protocol, name=args.name, port=args.port, keyword=args.keyword, matchType=args.match_type, nodeId=nodeId, force=args.force)
     else:
         print('You need to specify at least a name with --name [name]')
+
+def sites_charts(args):
+    """Sub command for sites charts"""
+    cli_subcommands[args.subparser].print_help()
+
+def sites_charts_create(args):
+    """Sub command for sites charts"""
+    siteId = ''
+    startDate = datetime.strptime(args.start.strip('\"'), '%Y-%m-%d').timestamp() if args.start else 0
+    endDate = datetime.strptime(args.end.strip('\"'), '%Y-%m-%d').timestamp() if args.end else 0
+
+    if args.id:
+        siteId = args.id
+    elif args.url:
+        # find correct server id for the server with the specified name
+        sites = Sites(cfg)
+        siteId = sites.getSiteId(args.url)
+
+    if siteId:
+        charts = SiteCharts(cfg)
+        chart_url = charts.create(siteId, startDate, endDate)
+
+        if chart_url and args.open:
+            webbrowser.open(chart_url)
+    else:
+        print('Please specify an existing site either by "--id id" or "--url url"')
 
 def sites_events(args):
     """Sub command for sites events"""
@@ -623,10 +655,25 @@ def performCLI():
     cli_sites_add.set_defaults(func=sites_add)
     cli_sites_add.add_argument('--url', nargs='?', metavar='url', help='url of site that should be monitored')
     cli_sites_add.add_argument('--name', nargs='?', metavar='name', help='name of site that should be monitored (optional)')
-    cli_sites_add.add_argument('--protocol', nargs='?', default='https', metavar='protocol', help='specify a different protocol than https')
-#    cli_sites_add.add_argument('--port', nargs='?', default=443, type=int, metavar='port', help='specify a different port than 443')
+    cli_sites_add.add_argument('--protocol', choices=['http', 'https', 'icmp', 'tcp'], default='https', metavar='protocol', help='specify a different protocol than https')
+    cli_sites_add.add_argument('--port', nargs='?', default=443, type=int, metavar='port', help='specify a different port than 443')
+    cli_sites_add.add_argument('--keyword', nargs='?', metavar='keyword', help='alert when the specified keyword is found/not found in the page HTML (optional)')
+    cli_sites_add.add_argument('--match-type', choices=['', 'yes', 'no'], default='', metavar='type', help='if set to \"yes\" it will alert when keyword is found on page, if \"no\" alert when keyword not found')
+    cli_sites_add.add_argument('--node-id', nargs='?', metavar='id', help='id of the monitoring node location that should monitor the url (optional)')
+    cli_sites_add.add_argument('--node-name', nargs='?', metavar='id', help='name of the monitoring node location that should monitor the url. In doubt, take the first match. (optional)')
     cli_sites_add.add_argument('--force', action='store_true', help='add new monitor even if already exists')
     cli_sites_add.add_argument('--file', nargs='?', default='', metavar='file', help='file containing one URL per line to monitor')
+
+    cli_sites_charts = cli_sites_subparsers.add_parser('charts', help='create a metrics chart as PNG file and print its url or open it in your browser')
+    cli_sites_charts.set_defaults(func=sites_charts)
+    cli_sites_charts_subparsers = cli_sites_charts.add_subparsers(title='commands', dest='subparser')
+    cli_sites_charts_create = cli_sites_charts_subparsers.add_parser('create', help='create a metrics chart as PNG file and print its url or open it in your browser')
+    cli_sites_charts_create.set_defaults(func=sites_charts_create)
+    cli_sites_charts_create.add_argument('--id', nargs='?', default='', metavar='id', help='show metrics for server with given ID')
+    cli_sites_charts_create.add_argument('--url', nargs='?', default='', metavar='url', help='show metrics for server with given url')
+    cli_sites_charts_create.add_argument('--start', nargs='?', default='', metavar='start', help='select start date of chart period in form of \"yyyy-mm-dd\" (optional)')
+    cli_sites_charts_create.add_argument('--end', nargs='?', default='', metavar='end', help='select end date of chart period in form of \"yyyy-mm-dd\" (optional)')
+    cli_sites_charts_create.add_argument('--open', action='store_true', help='open the metrics chart directly in the default web browser (optional)')
 
     cli_sites_events = cli_sites_subparsers.add_parser('events', help='list event notifications of a specified site')
     cli_sites_events.set_defaults(func=sites_events)

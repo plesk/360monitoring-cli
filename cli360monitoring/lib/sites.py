@@ -102,7 +102,7 @@ class Sites(object):
 
             self.printFooter(sort=sort, reverse=reverse, limit=limit)
 
-    def add(self, url: str, protocol: str = 'https', name: str = '', force: bool = False):
+    def add(self, url: str, protocol: str = 'https', name: str = '', port: int = 443, keyword: str = '', matchType:str = '', nodeId: str = '', force: bool = False):
         """Add a monitor for the given URL"""
 
         if url and self.fetchData():
@@ -126,15 +126,23 @@ class Sites(object):
 
             # other parameters:
             #   port: int (e.g. 443, 80)
-            #   keyword: string that needs to be in the http response body (e.g. "error")
             #   redirects: int (e.g. 3 max redirects; 0 for no redirects)
             #   timeout: int (e.g. 30 seconds)
+            #   interval: int # How often to perform the check in seconds
+            #   keyword: str  # Alert when error on my page is found in the page HTML
+            #   match_type: str 'yes' or 'no' # If set to yes it will alert when keyword is found on page, if no alert when keyword not found
+            #   monitor: str
+            #   protocol: str [http, https, icmp, tcp]
 
             # Make request to API endpoint
             data = {
                 'url': url,
                 'name': name,
-                'protocol': protocol
+                'port': port,
+                'protocol': protocol,
+                'keyword': keyword,
+                'match_type': matchType,
+                'monitor': nodeId,
             }
             apiPost('monitors', self.config, data=data, expectedStatusCode=200, successMessage='Added site monitor: ' + url, errorMessage='Failed to add site monitor ' + url + '')
 
