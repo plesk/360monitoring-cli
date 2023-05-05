@@ -736,6 +736,7 @@ def performCLI():
     cli_statistics.add_argument('--output', choices=['csv', 'table'], default='table', help='output format for the data')
     cli_statistics.add_argument('--csv', action='store_const', const='csv', dest='output', help='print data in CSV format')
     cli_statistics.add_argument('--table', action='store_const', const='table', dest='output', help='print data as ASCII table')
+    cli_statistics.add_argument('--json', action='store_const', const='json', dest='output', help='print data as JSON')
 
     # user tokens
 
