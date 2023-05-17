@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from http import HTTPStatus
 from prettytable import PrettyTable
 
 from .api import apiGet, apiPost, apiDelete
@@ -28,7 +29,7 @@ class Contacts(object):
         if self.contacts != None:
             return True
 
-        response_json = apiGet('contacts', 200, self.config)
+        response_json = apiGet('contacts', self.config)
         if response_json:
             if 'contacts' in response_json:
                 self.contacts = response_json['contacts']
@@ -79,7 +80,7 @@ class Contacts(object):
                     'sms': sms
                 }
             }
-            apiPost('contacts', self.config, data=data, expectedStatusCode=200, successMessage='Added contact \"' + name + '\"', errorMessage='Failed to add contact \"' + name + '\"')
+            apiPost('contacts', self.config, data=data, successMessage='Added contact \"' + name + '\"', errorMessage='Failed to add contact \"' + name + '\"')
 
     def remove(self, id: str = '', name: str = '', email: str = '', phone: str = ''):
         """Remove the contact for the given name"""
@@ -95,7 +96,7 @@ class Contacts(object):
                     or (name and name == curr_name) \
                     or (email and email == curr_email) \
                     or (phone and phone == curr_phone):
-                    apiDelete('contact/' + curr_id, self.config, expectedStatusCode=204, successMessage='Removed contact \"' + curr_name + '\" [' + curr_id + ']', errorMessage='Failed to remove contact \"' + curr_name + '\" [' + curr_id + ']')
+                    apiDelete('contact/' + curr_id, self.config, successMessage='Removed contact \"' + curr_name + '\" [' + curr_id + ']', errorMessage='Failed to remove contact \"' + curr_name + '\" [' + curr_id + ']')
                     return
 
         printWarn('No contact with given pattern found: id=' + id, 'name=' + name, 'email=' + email, 'phone=' + phone)

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import json
-from prettytable import PrettyTable
 from datetime import datetime
+from http import HTTPStatus
+from prettytable import PrettyTable
 
 from .api import apiGet
 from .config import Config
@@ -32,7 +33,7 @@ class ServerNotifications(object):
         params['start'] = int(startTimestamp)
         params['end'] = int(endTimestamp)
 
-        response_json = apiGet('server/' + serverId + '/notifications', 200, self.config, params)
+        response_json = apiGet('server/' + serverId + '/notifications', self.config, params=params)
         if response_json:
             if 'data' in response_json:
                 self.notifications = response_json['data']

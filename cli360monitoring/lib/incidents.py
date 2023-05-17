@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime
+from http import HTTPStatus
 from prettytable import PrettyTable
 
 from .api import apiGet, apiPost, apiDelete
@@ -29,7 +30,7 @@ class Incidents(object):
         if self.incidents != None:
             return True
 
-        response_json = apiGet('page/' + page_id + '/incidents', 200, self.config)
+        response_json = apiGet('page/' + page_id + '/incidents', self.config)
         if response_json:
             if 'incidents' in response_json:
                 self.incidents = response_json['incidents']
@@ -77,7 +78,7 @@ class Incidents(object):
                 'name': name,
                 'body': body
             }
-            apiPost('page/' + page_id + '/incidents', self.config, data=data, expectedStatusCode=204, successMessage='Added incident: ' + name, errorMessage='Failed to add incident \"' + name + '\" to page \"' + page_id + '\"')
+            apiPost('page/' + page_id + '/incidents', self.config, data=data, expectedStatusCode=HTTPStatus.NO_CONTENT, successMessage='Added incident: ' + name, errorMessage='Failed to add incident \"' + name + '\" to page \"' + page_id + '\"')
 
     def remove(self, page_id: str, id: str = '', name: str = ''):
         """Remove the incident for the given name"""
@@ -90,7 +91,7 @@ class Incidents(object):
 
                 if (id and id == curr_id) \
                     or (name and name == curr_name):
-                    apiDelete('page/' + page_id + '/incident/' + curr_id + '/' + curr_update_id, self.config, expectedStatusCode=204, successMessage='Removed incident: ' + curr_name + ' [' + curr_id + ']', errorMessage='Failed to remove incident \"' + curr_name + '\" [' + curr_id + '] from page \"' + page_id + '\"')
+                    apiDelete('page/' + page_id + '/incident/' + curr_id + '/' + curr_update_id, self.config, successMessage='Removed incident: ' + curr_name + ' [' + curr_id + ']', errorMessage='Failed to remove incident \"' + curr_name + '\" [' + curr_id + '] from page \"' + page_id + '\"')
                     return
 
         printWarn('No incident with given pattern found on page \"' + page_id + '\": id=' + id, 'name=' + name)

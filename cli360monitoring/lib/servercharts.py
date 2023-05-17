@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime
+from http import HTTPStatus
 
 from .api import apiGet
 from .config import Config
@@ -34,7 +35,7 @@ class ServerCharts(object):
         if endTimestamp > 0:
             params['end'] = int(endTimestamp)
 
-        response_json = apiGet('server/' + serverId + '/metrics', 200, self.config, params)
+        response_json = apiGet('server/' + serverId + '/metrics', self.config, params=params)
         if response_json:
             if dataAsJSON:
                 print(json.dumps(response_json, indent=4))

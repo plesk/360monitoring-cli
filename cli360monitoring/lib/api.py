@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import requests
 import json
+import requests
+from http import HTTPStatus
 
 from .config import Config
 from .functions import printError
@@ -13,7 +14,7 @@ def toParamString(params):
 
     return s.rstrip('&')
 
-def apiGet(path: str, expectedStatusCode: int, config: Config, params: dict = None):
+def apiGet(path: str, config: Config, expectedStatusCode: HTTPStatus = HTTPStatus.OK, params: dict = None):
     """Do a GET request and return JSON from response if expected status code was returned"""
     # check if headers are correctly set for authorization
     if not config.headers():
@@ -29,14 +30,14 @@ def apiGet(path: str, expectedStatusCode: int, config: Config, params: dict = No
     response = requests.get(config.endpoint + path, params=params, headers=config.headers())
 
     # Check status code of response
-    if response.status_code == expectedStatusCode:
+    if response.status_code == expectedStatusCode.value:
         # Return json from response
         return response.json()
     else:
         printError('An error occurred:', response.status_code)
         return None
 
-def apiPost(path: str, config: Config, params: dict = None, data: dict = None, expectedStatusCode: int = 200, successMessage: str = '', errorMessage: str = ''):
+def apiPost(path: str, config: Config, params: dict = None, data: dict = None, expectedStatusCode: HTTPStatus = HTTPStatus.OK, successMessage: str = '', errorMessage: str = ''):
     """Do a POST request"""
     # check if headers are correctly set for authorization
     if not config.headers():
@@ -57,7 +58,7 @@ def apiPost(path: str, config: Config, params: dict = None, data: dict = None, e
     response = requests.post(config.endpoint + path, data=dataStr, headers=config.headers())
 
     # Check status code of response
-    if response.status_code == expectedStatusCode:
+    if response.status_code == expectedStatusCode.value:
         if successMessage:
             print(successMessage)
         return True
@@ -87,7 +88,7 @@ def apiPostJSON(path: str, config: Config, params: dict = None, data: dict = Non
     response = requests.post(config.endpoint + path, data=dataStr, headers=config.headers())
     return response.json()
 
-def apiPut(path: str, config: Config, params: dict = None, data: dict = None, expectedStatusCode: int = 200, successMessage: str = '', errorMessage: str = ''):
+def apiPut(path: str, config: Config, params: dict = None, data: dict = None, expectedStatusCode: HTTPStatus = HTTPStatus.OK, successMessage: str = '', errorMessage: str = ''):
     """Do a PUT request"""
     # check if headers are correctly set for authorization
     if not config.headers():
@@ -108,7 +109,7 @@ def apiPut(path: str, config: Config, params: dict = None, data: dict = None, ex
     response = requests.put(config.endpoint + path, data=dataStr, headers=config.headers())
 
     # Check status code of response
-    if response.status_code == expectedStatusCode:
+    if response.status_code == expectedStatusCode.value:
         if successMessage:
             print(successMessage)
         return True
@@ -117,7 +118,7 @@ def apiPut(path: str, config: Config, params: dict = None, data: dict = None, ex
             print(errorMessage, '(status ' + str(response.status_code) + ')')
         return False
 
-def apiDelete(path: str, config: Config, params: dict = None, expectedStatusCode: int = 204, successMessage: str = '', errorMessage: str = ''):
+def apiDelete(path: str, config: Config, params: dict = None, expectedStatusCode: HTTPStatus = HTTPStatus.NO_CONTENT, successMessage: str = '', errorMessage: str = ''):
     """Do a DELETE request"""
     # check if headers are correctly set for authorization
     if not config.headers():
@@ -136,7 +137,7 @@ def apiDelete(path: str, config: Config, params: dict = None, expectedStatusCode
     response = requests.delete(config.endpoint + path, headers=config.headers())
 
     # Check status code of response
-    if response.status_code == expectedStatusCode:
+    if response.status_code == expectedStatusCode.value:
         if successMessage:
             print(successMessage)
         return True

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from http import HTTPStatus
 from prettytable import PrettyTable
 
 from .api import apiGet
@@ -25,7 +26,7 @@ class Nodes(object):
         if self.nodes != None:
             return True
 
-        response_json = apiGet('nodes', 200, self.config)
+        response_json = apiGet('nodes', self.config)
         if response_json:
             if 'nodes' in response_json:
                 self.nodes = response_json['nodes']

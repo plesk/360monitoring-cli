@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import json
-from prettytable import PrettyTable
 from datetime import datetime
+from http import HTTPStatus
+from prettytable import PrettyTable
 
 from .api import apiGet, apiPost, apiDelete
 from .config import Config
@@ -36,7 +37,7 @@ class Sites(object):
         if self.monitors != None:
             return True
 
-        response_json = apiGet('monitors', 200, self.config)
+        response_json = apiGet('monitors', self.config)
         if response_json:
             if 'monitors' in response_json:
                 self.monitors = response_json['monitors']
@@ -144,7 +145,7 @@ class Sites(object):
                 'match_type': matchType,
                 'monitor': nodeId,
             }
-            apiPost('monitors', self.config, data=data, expectedStatusCode=200, successMessage='Added site monitor: ' + url, errorMessage='Failed to add site monitor ' + url + '')
+            apiPost('monitors', self.config, data=data, successMessage='Added site monitor: ' + url, errorMessage='Failed to add site monitor ' + url + '')
 
     def remove(self, id: str = '', url: str = '', name: str = '', location: str = '', pattern: str = ''):
         """Remove the monitor for the given URL"""
@@ -163,7 +164,7 @@ class Sites(object):
                     or (location and location in curr_location) \
                     or (pattern and pattern in curr_url):
                     removed += 1
-                    apiDelete('monitor/' + curr_id, self.config, expectedStatusCode=204, successMessage='Removed site monitor: ' + curr_url + ' [' + curr_id + ']', errorMessage='Failed to remove site monitor ' + curr_url + ' [' + curr_id + ']')
+                    apiDelete('monitor/' + curr_id, self.config, successMessage='Removed site monitor: ' + curr_url + ' [' + curr_id + ']', errorMessage='Failed to remove site monitor ' + curr_url + ' [' + curr_id + ']')
 
         if removed == 0:
             printWarn('No monitors with given pattern found: id=' + id, 'url=', url, 'name=' + name, 'location=' + location, 'pattern=' + pattern)
@@ -191,7 +192,7 @@ class Sites(object):
         params['start'] = int(startTimestamp)
         params['end'] = int(endTimestamp)
 
-        response_json = apiGet('monitor/' + siteId + '/uptime', 200, self.config, params=params)
+        response_json = apiGet('monitor/' + siteId + '/uptime', self.config, params=params)
         if response_json:
             if 'uptime_percentage' in response_json:
                 return response_json

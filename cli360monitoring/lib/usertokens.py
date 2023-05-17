@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from http import HTTPStatus
 from prettytable import PrettyTable
 
 from .api import apiGet, apiPost
@@ -25,7 +26,7 @@ class UserTokens(object):
         if self.usertokens != None:
             return True
 
-        response_json = apiGet('usertoken', 200, self.config)
+        response_json = apiGet('usertoken', self.config)
         if response_json:
             if 'tokens' in response_json:
                 self.usertokens = response_json['tokens']
@@ -76,7 +77,7 @@ class UserTokens(object):
             'tags': tags
         }
 
-        return apiPost('usertoken', self.config, data=data, expectedStatusCode=200, successMessage='Created usertoken', errorMessage='Failed to create usertoken')
+        return apiPost('usertoken', self.config, data=data, successMessage='Created usertoken', errorMessage='Failed to create usertoken')
 
     def print(self, usertoken, format: str = 'table'):
         """Print the data of the specified usertoken"""

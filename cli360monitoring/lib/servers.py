@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from http import HTTPStatus
 from prettytable import PrettyTable
 
 from .api import apiGet, apiPut
@@ -33,7 +34,7 @@ class Servers(object):
         if self.servers != None:
             return True
 
-        response_json = apiGet('servers', 200, self.config, self.config.params(tags))
+        response_json = apiGet('servers', self.config, params=self.config.params(tags))
         if response_json:
             if 'servers' in response_json:
                 self.servers = response_json['servers']
@@ -52,7 +53,7 @@ class Servers(object):
         data = {
             "tags": tags
         }
-        apiPut('server/' + serverId, self.config, data=data, expectedStatusCode=200, successMessage='Updated tags of server ' + serverId + ' to ' + tags, errorMessage='Failed to update server ' + serverId)
+        apiPut('server/' + serverId, self.config, data=data, successMessage='Updated tags of server ' + serverId + ' to ' + tags, errorMessage='Failed to update server ' + serverId)
 
     def list(self, issuesOnly: bool, sort: str, reverse: bool, limit: int, tags):
         """Iterate through list of server monitors and print details"""
