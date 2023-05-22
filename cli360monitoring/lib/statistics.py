@@ -100,3 +100,5 @@ class Statistics(object):
             print(self.table)
         elif (format == 'csv'):
             print(self.table.get_csv_string(delimiter=self.config.delimiter))
+        elif (format == 'json'):
+            print(self.table.get_json_string(header=False))
