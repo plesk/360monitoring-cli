@@ -540,7 +540,7 @@ def performCLI():
 
     # magiclinks
 
-    cli_magiclinks = subparsers.add_parser('magiclinks', help='create a magic link for the dasboard of a specific server')
+    cli_magiclinks = subparsers.add_parser('magiclinks', help='create a magic link for the dashboard of a specific server')
     cli_magiclinks.set_defaults(func=magiclinks)
     cli_magiclinks_subparsers = cli_magiclinks.add_subparsers(title='commands', dest='subparser')
 
