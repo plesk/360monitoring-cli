@@ -17,7 +17,7 @@ You can find the full documentation including the feature complete REST API at [
 
 ## Configure your account
 
-First you need to connect your CLI to your existing 360 Monitoring account via your API KEY. If you don't have a 360 Monitoring account yet, please register for free at https://360monitoring.com. To create an API KEY you'll need to upgrade at least to a Pro plan to be able to create your API KEY.
+First you need to connect your CLI to your existing 360 Monitoring account via your API KEY. If you don't have a 360 Monitoring account yet, please register for free at https://360monitoring.com. To create an API KEY you'll need to upgrade at least to a Business plan to be able to create your API KEY.
 
     $ 360monitoring config save --api-key KEY     configure API KEY to connect to 360 Monitoring account
 
